@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>本地实时监控</title>
+    <link rel="stylesheet" href="/local-demo.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <div class="eyebrow">Local edge observability</div>
+          <h1>机器人实时监控</h1>
+        </div>
+        <div class="status">本地监控服务在线</div>
+      </header>
+
+      <section class="grid">
+        <article class="card metric">
+          <small>在线机器人</small>
+          <strong id="robot-count">0</strong>
+          <div class="bar"><span id="robot-bar" style="width: 0"></span></div>
+        </article>
+        <article class="card metric">
+          <small>平均电量</small>
+          <strong id="battery">88%</strong>
+          <div class="bar"><span id="battery-bar" style="width: 88%"></span></div>
+        </article>
+        <article class="card metric">
+          <small>任务成功率</small>
+          <strong>96.8%</strong>
+          <div class="bar"><span style="width: 96.8%"></span></div>
+        </article>
+        <article class="card metric">
+          <small>边缘节点延迟</small>
+          <strong id="latency">21ms</strong>
+          <div class="bar"><span style="width: 21%"></span></div>
+        </article>
+
+        <article class="card wide">
+          <h2>机器人工作状态</h2>
+          <div id="robot-list" class="list"></div>
+        </article>
+
+        <article class="card side">
+          <h2>环境信息</h2>
+          <div id="environment" class="list"></div>
+        </article>
+
+        <article class="card full">
+          <h2>视频监控通道</h2>
+          <div id="camera-list" class="list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      let payload = {};
+      try {
+        payload = JSON.parse(decodeURIComponent(params.get("data") || "{}"));
+      } catch (error) {
+        console.warn("监控数据解析失败", error);
+      }
+
+      const robots = Array.isArray(payload.robots) ? payload.robots : [];
+      const environment = payload.environment || {};
+      const cameras = Array.isArray(payload.video_surveillance) ? payload.video_surveillance : [];
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+
+      document.querySelector("#robot-count").textContent = String(robots.length);
+      document.querySelector("#robot-bar").style.width = `${Math.min(100, robots.length * 25)}%`;
+
+      document.querySelector("#robot-list").innerHTML = robots.length
+        ? robots.map((robot, index) => `
+          <div class="list-item">
+            <div>
+              <strong>${escapeHtml(robot.name || `机器人-${index + 1}`)}</strong>
+              <div class="muted">${escapeHtml(robot.task_name || "待命任务")}</div>
+              <div>${(robot.algorithm || []).map((name) => `<span class="tag">${escapeHtml(name)}</span>`).join("")}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="color:#86efac">运行中</div>
+              <small class="muted">电量 ${88 - index * 4}% · ${0.6 + index * 0.12}m/s</small>
+            </div>
+          </div>
+        `).join("")
+        : '<div class="list-item"><span class="muted">工作流中尚未配置机器人</span></div>';
+
+      const environmentItems = [
+        ["温度", environment.temperature, "°C"],
+        ["湿度", environment.humidity, "%"],
+        ["气压", environment.pressure, "hPa"],
+        ["风速", environment.wind_speed, "m/s"]
+      ];
+      document.querySelector("#environment").innerHTML = environmentItems
+        .map(([label, value, unit]) => `
+          <div class="list-item">
+            <span class="muted">${label}</span>
+            <strong>${escapeHtml(value ?? "--")}${unit}</strong>
+          </div>
+        `).join("");
+
+      document.querySelector("#camera-list").innerHTML = cameras.length
+        ? cameras.map((camera, index) => `
+          <div class="list-item">
+            <div>
+              <strong>${escapeHtml(camera.name || `监控通道 ${index + 1}`)}</strong>
+              <div class="muted">本地演示通道 · CAM-${String(index + 1).padStart(2, "0")}</div>
+            </div>
+            <span class="status">在线</span>
+          </div>
+        `).join("")
+        : '<div class="list-item"><span class="muted">没有视频通道数据</span></div>';
+
+      setInterval(() => {
+        const battery = 84 + Math.floor(Math.random() * 8);
+        const latency = 17 + Math.floor(Math.random() * 10);
+        document.querySelector("#battery").textContent = `${battery}%`;
+        document.querySelector("#battery-bar").style.width = `${battery}%`;
+        document.querySelector("#latency").textContent = `${latency}ms`;
+      }, 2200);
+    </script>
+  </body>
+</html>

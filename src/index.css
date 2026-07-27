@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Robot Monitoring System Design System - Industrial/Tech Theme */
+
+@layer base {
+  :root {
+    /* Base colors - Light mode */
+    --background: 0 0% 100%;
+    --foreground: 215 30% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 30% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 30% 10%;
+
+    /* Primary: Professional blue */
+    --primary: 210 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 100% 40%;
+
+    /* Secondary: Neutral gray */
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 215 30% 15%;
+
+    --muted: 0 0% 97%;
+    --muted-foreground: 215 20% 35%;
+
+    --accent: 0 0% 95%;
+    --accent-foreground: 215 30% 15%;
+
+    /* Status colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Robot status indicators */
+    --status-online: 142 76% 36%;
+    --status-offline: 0 84% 60%;
+    --status-idle: 38 92% 50%;
+    --status-working: 210 100% 45%;
+
+    --border: 0 0% 93%;
+    --input: 0 0% 93%;
+    --ring: 210 100% 45%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - Light mode */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 30% 10%;
+    --sidebar-primary: 210 100% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 215 30% 15%;
+    --sidebar-border: 0 0% 93%;
+    --sidebar-ring: 210 100% 45%;
+
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 45%), hsl(210 100% 35%));
+    --gradient-status: linear-gradient(90deg, hsl(142 76% 36%), hsl(210 100% 45%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 15% 98%));
+
+    /* Shadows */
+    --shadow-elevation: 0 4px 6px -1px hsl(210 100% 45% / 0.1), 0 2px 4px -1px hsl(210 100% 45% / 0.06);
+    --shadow-card: 0 10px 15px -3px hsl(215 25% 15% / 0.1), 0 4px 6px -2px hsl(215 25% 15% / 0.05);
+  }
+
+  .dark {
+    /* Base colors - Dark mode (optimized for industrial monitoring) */
+    --background: 215 25% 8%;
+    --foreground: 210 15% 85%;
+
+    --card: 215 25% 10%;
+    --card-foreground: 210 15% 85%;
+
+    --popover: 215 25% 10%;
+    --popover-foreground: 210 15% 85%;
+
+    /* Primary: Brighter blue for dark mode */
+    --primary: 210 100% 55%;
+    --primary-foreground: 215 25% 8%;
+    --primary-hover: 210 100% 60%;
+
+    --secondary: 215 25% 15%;
+    --secondary-foreground: 210 15% 75%;
+
+    --muted: 215 25% 12%;
+    --muted-foreground: 210 15% 55%;
+
+    --accent: 215 25% 15%;
+    --accent-foreground: 210 15% 75%;
+
+    /* Status colors - adjusted for dark mode */
+    --success: 142 76% 45%;
+    --success-foreground: 215 25% 8%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 215 25% 8%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 215 25% 8%;
+
+    /* Robot status indicators */
+    --status-online: 142 76% 45%;
+    --status-offline: 0 84% 65%;
+    --status-idle: 38 92% 60%;
+    --status-working: 210 100% 55%;
+
+    --border: 215 25% 18%;
+    --input: 215 25% 18%;
+    --ring: 210 100% 55%;
+
+    /* Sidebar */
+    --sidebar-background: 215 25% 6%;
+    --sidebar-foreground: 210 15% 85%;
+    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary-foreground: 215 25% 8%;
+    --sidebar-accent: 215 25% 10%;
+    --sidebar-accent-foreground: 210 15% 85%;
+    --sidebar-border: 215 25% 12%;
+    --sidebar-ring: 210 100% 55%;
+
+    /* Custom gradients for dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 55%), hsl(210 100% 45%));
+    --gradient-status: linear-gradient(90deg, hsl(142 76% 45%), hsl(210 100% 55%));
+    --gradient-card: linear-gradient(145deg, hsl(215 25% 10%), hsl(215 25% 12%));
+
+    /* Shadows for dark mode */
+    --shadow-elevation: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-card: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

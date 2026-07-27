@@ -1,0 +1,22 @@
+[
+  {
+    "name": "加油站门口监控",
+    "url": "http://192.168.80.210:8089",
+    "m3u8": "/streams/cam_0/stream.m3u8"
+  },
+  {
+    "name": "加油站内部监控",
+    "url": "http://192.168.80.210:8089",
+    "m3u8": "/streams/cam_1/stream.m3u8"
+  },
+  {
+    "name": "加油站油枪监控",
+    "url": "http://192.168.80.210:8089",
+    "m3u8": "/streams/cam_0/stream.m3u8"
+  },
+  {
+    "name": "超市监控",
+    "url": "http://192.168.80.210:8089",
+    "m3u8": "/streams/cam_1/stream.m3u8"
+  }
+]

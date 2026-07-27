@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: cube-artifact-smoke-
+  namespace: pipeline
+  labels:
+    app.kubernetes.io/name: cube-artifact-smoke
+    app.kubernetes.io/part-of: cloud-bot-flow
+spec:
+  entrypoint: create-artifact
+  serviceAccountName: pipeline-runner
+  arguments:
+    parameters:
+      - name: evidence-level
+        value: runtime-verified
+  templates:
+    - name: create-artifact
+      container:
+        image: localhost:5001/cube-smoke:1.0
+        imagePullPolicy: Always
+        command:
+          - /bin/sh
+          - -c
+        args:
+          - |
+            set -eu
+            mkdir -p /tmp/cube-evidence
+            cat > /tmp/cube-evidence/result.txt <<EOF
+            workflow={{workflow.name}}
+            namespace={{workflow.namespace}}
+            evidence_level={{workflow.parameters.evidence-level}}
+            image=localhost:5001/cube-smoke:1.0
+            registry=localhost:5001
+            artifact_store=minio.kubeflow:9000/mlpipeline
+            EOF
+            cat /tmp/cube-evidence/result.txt
+      outputs:
+        artifacts:
+          - name: runtime-evidence
+            path: /tmp/cube-evidence/result.txt

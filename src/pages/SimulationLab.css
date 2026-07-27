@@ -1,0 +1,244 @@
+.simulation-world {
+  position: relative;
+  height: 420px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.14), transparent 38%),
+    linear-gradient(180deg, #0d1728, #08111e);
+}
+
+.simulation-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  transform: perspective(600px) rotateX(56deg) scale(1.45);
+  transform-origin: center bottom;
+  background:
+    linear-gradient(rgba(59, 130, 246, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.22) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.warehouse-shelf {
+  position: absolute;
+  width: 118px;
+  height: 78px;
+  border: 2px solid rgba(148, 163, 184, 0.56);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, transparent 31%, rgba(148, 163, 184, 0.28) 32%, transparent 34%, transparent 65%, rgba(148, 163, 184, 0.28) 66%, transparent 68%),
+    linear-gradient(transparent 47%, rgba(148, 163, 184, 0.28) 48%, transparent 51%),
+    rgba(30, 41, 59, 0.84);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
+}
+
+.warehouse-shelf span {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  color: #94a3b8;
+  font: 11px monospace;
+}
+
+.shelf-a {
+  left: 18%;
+  top: 12%;
+}
+
+.shelf-b {
+  right: 10%;
+  top: 12%;
+}
+
+.warehouse-obstacle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  transform: rotate(45deg);
+  border: 1px solid rgba(245, 158, 11, 0.65);
+  background: repeating-linear-gradient(45deg, #713f12 0 7px, #f59e0b 7px 12px);
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.2);
+}
+
+.obstacle-a {
+  left: 43%;
+  top: 56%;
+}
+
+.obstacle-b {
+  right: 24%;
+  top: 70%;
+}
+
+.target-zone {
+  position: absolute;
+  right: 6%;
+  top: 28%;
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  border: 2px dashed #22c55e;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+  font-size: 11px;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.18);
+}
+
+.simulation-robot {
+  position: absolute;
+  z-index: 5;
+  width: 76px;
+  height: 62px;
+  transform: translate(-50%, -50%);
+  transition: left 0.38s linear, top 0.38s linear;
+}
+
+.robot-body {
+  position: absolute;
+  left: 6px;
+  top: 11px;
+  display: grid;
+  width: 64px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #60a5fa;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #2563eb, #172554);
+  color: #dbeafe;
+  font: 8px monospace;
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.5);
+}
+
+.robot-lidar {
+  position: absolute;
+  left: 30px;
+  top: 2px;
+  z-index: 2;
+  width: 18px;
+  height: 14px;
+  border: 2px solid #67e8f9;
+  border-radius: 8px 8px 3px 3px;
+  background: #164e63;
+}
+
+.robot-wheel {
+  position: absolute;
+  top: 47px;
+  width: 18px;
+  height: 12px;
+  border-radius: 5px;
+  background: #020617;
+  border: 1px solid #64748b;
+}
+
+.robot-wheel.left {
+  left: 9px;
+}
+
+.robot-wheel.right {
+  right: 9px;
+}
+
+.robot-scan {
+  position: absolute;
+  left: 38px;
+  top: 9px;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(34, 211, 238, 0.55);
+  border-radius: 50%;
+  animation: simulation-scan 1.8s ease-out infinite;
+}
+
+.simulation-path {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.simulation-path path {
+  fill: none;
+  stroke: #22d3ee;
+  stroke-width: 3;
+  stroke-dasharray: 9 8;
+  opacity: 0.68;
+  animation: simulation-path-flow 1.3s linear infinite;
+}
+
+.scene-overlay {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 8;
+  display: flex;
+  gap: 10px;
+  color: #cbd5e1;
+  font: 11px monospace;
+}
+
+.scene-overlay div {
+  padding: 6px 8px;
+  border: 1px solid rgba(71, 85, 105, 0.65);
+  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.78);
+}
+
+.scene-overlay span {
+  margin-right: 5px;
+  color: #38bdf8;
+}
+
+@keyframes simulation-scan {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.15);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+@keyframes simulation-path-flow {
+  to {
+    stroke-dashoffset: -34;
+  }
+}
+
+@media (max-width: 640px) {
+  .simulation-world {
+    height: 320px;
+  }
+
+  .warehouse-shelf {
+    width: 86px;
+    height: 60px;
+  }
+
+  .scene-overlay {
+    left: 8px;
+    gap: 4px;
+  }
+
+  .scene-overlay div {
+    padding: 5px;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simulation-robot {
+    transition: none;
+  }
+
+  .robot-scan,
+  .simulation-path path {
+    animation: none;
+  }
+}

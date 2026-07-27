@@ -1,0 +1,37 @@
+[
+  {
+    "id": "ai-design",
+    "name": "AI-Design",
+    "version": "v1.0.0",
+    "type": "AI设计",
+    "description": "基于AI的机器人自动化设计工具"
+  },
+  {
+    "id": "algo-1",
+    "name": "SLAM导航算法",
+    "version": "v2.1.0",
+    "type": "感认知",
+    "description": "基于激光雷达的同时定位与地图构建算法"
+  },
+  {
+    "id": "algo-2",
+    "name": "视觉识别算法", 
+    "version": "v1.8.3",
+    "type": "感认知",
+    "description": "深度学习驱动的物体检测与识别算法"
+  },
+  {
+    "id": "algo-3",
+    "name": "路径规划算法",
+    "version": "v1.5.2", 
+    "type": "决策",
+    "description": "基于A*算法的最优路径规划与避障"
+  },
+  {
+    "id": "algo-4",
+    "name": "机械臂控制",
+    "version": "v3.0.1",
+    "type": "控制", 
+    "description": "六自由度机械臂的精密运动控制算法"
+  }
+]

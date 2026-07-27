@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>本地机器人训练场</title>
+    <link rel="stylesheet" href="/local-demo.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <div class="eyebrow">Robot training sandbox</div>
+          <h1>机器人训练场</h1>
+        </div>
+        <div class="status">仿真环境已就绪</div>
+      </header>
+
+      <section class="grid">
+        <article class="card wide" style="min-height:420px">
+          <h2>仓储搬运仿真场景</h2>
+          <div style="position:relative;height:320px;margin-top:24px;border-radius:14px;overflow:hidden;background:
+            linear-gradient(rgba(59,130,246,.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,.12) 1px, transparent 1px),
+            #0b1628;background-size:32px 32px">
+            <div id="robot" style="position:absolute;left:8%;top:62%;width:54px;height:54px;border-radius:16px;background:#2563eb;box-shadow:0 0 30px rgba(37,99,235,.55);transition:left .35s linear, top .35s linear">
+              <div style="position:absolute;left:10px;top:12px;width:8px;height:8px;border-radius:50%;background:#bfdbfe"></div>
+              <div style="position:absolute;right:10px;top:12px;width:8px;height:8px;border-radius:50%;background:#bfdbfe"></div>
+            </div>
+            <div style="position:absolute;right:8%;top:14%;padding:16px;border:1px solid #475569;border-radius:10px;background:#172033">目标货位 B-07</div>
+          </div>
+        </article>
+
+        <article class="card side">
+          <h2>训练控制</h2>
+          <p class="muted">本地轻量后端提供可交互的训练流程演示。</p>
+          <div class="list" style="margin:22px 0">
+            <div class="list-item"><span>当前轮次</span><strong id="epoch">0 / 100</strong></div>
+            <div class="list-item"><span>累计奖励</span><strong id="reward">0.00</strong></div>
+            <div class="list-item"><span>碰撞次数</span><strong id="collision">0</strong></div>
+          </div>
+          <div class="bar" style="height:12px"><span id="progress" style="width:0"></span></div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button id="start">开始训练</button>
+            <button id="reset" class="secondary">重置</button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      let epoch = 0;
+      let running = false;
+      let timer;
+      const robot = document.querySelector("#robot");
+
+      function render() {
+        document.querySelector("#epoch").textContent = `${epoch} / 100`;
+        document.querySelector("#reward").textContent = (epoch * 1.37).toFixed(2);
+        document.querySelector("#collision").textContent = String(Math.floor(epoch / 37));
+        document.querySelector("#progress").style.width = `${epoch}%`;
+        robot.style.left = `${8 + (epoch % 78)}%`;
+        robot.style.top = `${18 + ((epoch * 7) % 58)}%`;
+      }
+
+      function toggleTraining() {
+        running = !running;
+        document.querySelector("#start").textContent = running ? "暂停训练" : "继续训练";
+        clearInterval(timer);
+        if (running) {
+          timer = setInterval(() => {
+            epoch = Math.min(100, epoch + 1);
+            render();
+            if (epoch === 100) toggleTraining();
+          }, 180);
+        }
+      }
+
+      document.querySelector("#start").addEventListener("click", toggleTraining);
+      document.querySelector("#reset").addEventListener("click", () => {
+        running = false;
+        clearInterval(timer);
+        epoch = 0;
+        document.querySelector("#start").textContent = "开始训练";
+        render();
+      });
+    </script>
+  </body>
+</html>
