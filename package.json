@@ -13,7 +13,7 @@
     "minio:up": "docker compose -f docker-compose.minio.yml up -d",
     "minio:down": "docker compose -f docker-compose.minio.yml down",
     "preview": "vite preview",
-    "start": "vite"
+    "start": "node backend/server.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

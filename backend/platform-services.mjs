@@ -59,7 +59,15 @@ async function cubeRequest(pathname, options = {}) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          ...(cubeStudioToken ? { Authorization: `Bearer ${cubeStudioToken}` } : {}),
+          // cube-studio AUTH_PLATFORM_ACCESS：短 token 直接作为用户名；长 token 按 Bearer JWT
+          ...(cubeStudioToken
+            ? {
+                Authorization:
+                  cubeStudioToken.length < 40 || cubeStudioToken.startsWith("Bearer ")
+                    ? cubeStudioToken.replace(/^Bearer\s+/i, "")
+                    : `Bearer ${cubeStudioToken}`
+              }
+            : {}),
           ...(options.headers || {})
         }
       }),
@@ -100,16 +108,19 @@ export const cubeStudio = {
       };
     }
     try {
-      const result = await cubeRequest(
-        String(process.env.CUBE_STUDIO_HEALTH_PATH || "/health")
-      );
+      // Prefer explicit health path; fall back to a lightweight authenticated API
+      const healthPath = String(process.env.CUBE_STUDIO_HEALTH_PATH || "/health");
+      try {
+        await cubeRequest(healthPath);
+      } catch {
+        await cubeRequest("/project_modelview/api/");
+      }
       return {
         configured: true,
         reachable: true,
         mode: "cube-studio",
         endpoint: cubeStudioBaseUrl,
-        status: result.status,
-        message: "Cube Studio 可访问"
+        message: "Cube Studio 可访问（镜像构建/仓库/Pipeline 将转发到该实例）"
       };
     } catch (error) {
       return {
@@ -120,6 +131,10 @@ export const cubeStudio = {
         message: error instanceof Error ? error.message : String(error)
       };
     }
+  },
+
+  async listDockerBuilds() {
+    return cubeRequest("/docker_modelview/api/");
   },
 
   async createDockerBuild(input) {
@@ -142,6 +157,10 @@ export const cubeStudio = {
     });
   },
 
+  async listRepositories() {
+    return cubeRequest("/repository_modelview/api/");
+  },
+
   async createRepository(input) {
     return cubeRequest("/repository_modelview/api/", {
       method: "POST",
@@ -153,6 +172,14 @@ export const cubeStudio = {
         hubsecret: input.hubsecret
       })
     });
+  },
+
+  async listImages() {
+    return cubeRequest("/images_modelview/api/");
+  },
+
+  async listWorkflows() {
+    return cubeRequest("/workflow_modelview/api/");
   },
 
   async runPipeline(pipelineId) {
