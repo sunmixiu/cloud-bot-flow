@@ -1,0 +1,188 @@
+{
+  "verified_at": "2026-07-24T10:20:00.000Z",
+  "execution_notice": "目录中的镜像名是建议的内部构建目标。当前轻量后端只运行浏览器数字孪生适配器，不会拉取或执行第三方 Docker 镜像。",
+  "sources": [
+    {
+      "id": 101,
+      "catalog_key": "slam-toolbox",
+      "name": "SLAM Toolbox 2D 建图",
+      "module": "定位与建图",
+      "language": "C++ / ROS 2",
+      "version": "ros2@eee0cd5",
+      "author": "Steve Macenski / Open Navigation",
+      "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+      "branch": "ros2",
+      "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+      "license": "LGPL-2.1",
+      "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+      "simulation": {
+        "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+        "command": "ros2 launch slam_toolbox online_async_launch.py",
+        "runtime": "ROS 2",
+        "inputs": ["/scan", "/tf"],
+        "outputs": ["/map", "/pose", "/tf"],
+        "input_types": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage"
+        },
+        "output_types": {
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+        },
+        "color": "#3b82f6"
+      }
+    },
+    {
+      "id": 102,
+      "catalog_key": "navigation2",
+      "name": "Nav2 自主导航",
+      "module": "导航与路径规划",
+      "language": "C++ / ROS 2",
+      "version": "main@193ae1f",
+      "author": "Open Navigation",
+      "repository_url": "https://github.com/ros-navigation/navigation2",
+      "branch": "main",
+      "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+      "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+      "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+      "simulation": {
+        "image": "catalog.local/ros2/navigation2:193ae1f",
+        "command": "ros2 launch nav2_bringup navigation_launch.py",
+        "runtime": "ROS 2",
+        "inputs": ["/map", "/odom", "/goal_pose"],
+        "outputs": ["/cmd_vel", "/plan", "/navigation_feedback"],
+        "input_types": {
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped"
+        },
+        "output_types": {
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path"
+        },
+        "color": "#06b6d4"
+      }
+    },
+    {
+      "id": 103,
+      "catalog_key": "apriltag-ros2",
+      "name": "AprilTag ROS 2 视觉定位",
+      "module": "机器视觉",
+      "language": "C++ / ROS 2",
+      "version": "master@beffb4c",
+      "author": "Christian Rauch / AprilRobotics",
+      "repository_url": "https://github.com/christianrauch/apriltag_ros",
+      "branch": "master",
+      "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+      "license": "MIT",
+      "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+      "simulation": {
+        "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+        "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+        "runtime": "ROS 2",
+        "inputs": ["/camera/image_raw", "/camera/camera_info"],
+        "outputs": ["/detections", "/tf"],
+        "input_types": {
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+        },
+        "output_types": {
+          "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+          "/tf": "tf2_msgs/msg/TFMessage"
+        },
+        "color": "#8b5cf6"
+      }
+    },
+    {
+      "id": 104,
+      "catalog_key": "moveit2",
+      "name": "MoveIt 2 机械臂规划",
+      "module": "运动规划与控制",
+      "language": "C++ / ROS 2",
+      "version": "main@f737f20",
+      "author": "MoveIt Maintainers",
+      "repository_url": "https://github.com/moveit/moveit2",
+      "branch": "main",
+      "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+      "license": "BSD-3-Clause",
+      "description": "ROS 2 机械臂运动规划框架，提供碰撞检测、运动学、轨迹规划和执行接口。",
+      "simulation": {
+        "image": "catalog.local/ros2/moveit2:f737f20",
+        "command": "ros2 launch moveit_resources_panda_moveit_config demo.launch.py",
+        "runtime": "MoveIt 2 / ROS 2",
+        "inputs": ["/joint_states", "/planning_scene", "/motion_plan_request"],
+        "outputs": ["/joint_trajectory", "/display_planned_path"],
+        "input_types": {
+          "/joint_states": "sensor_msgs/msg/JointState",
+          "/planning_scene": "moveit_msgs/msg/PlanningScene",
+          "/motion_plan_request": "moveit_msgs/msg/MotionPlanRequest"
+        },
+        "output_types": {
+          "/joint_trajectory": "trajectory_msgs/msg/JointTrajectory",
+          "/display_planned_path": "moveit_msgs/msg/DisplayTrajectory"
+        },
+        "color": "#f59e0b"
+      }
+    },
+    {
+      "id": 105,
+      "catalog_key": "robot-localization",
+      "name": "robot_localization 状态估计",
+      "module": "定位与传感器融合",
+      "language": "C++ / ROS 2",
+      "version": "rolling@7dfb6aa",
+      "author": "Charles River Analytics / ROS Community",
+      "repository_url": "https://github.com/cra-ros-pkg/robot_localization",
+      "branch": "rolling-devel",
+      "verified_commit": "7dfb6aa97b2082185d2fac3420888ae8474bfc1a",
+      "license": "BSD",
+      "description": "基于 EKF/UKF 的非线性状态估计，将里程计、IMU 和 GPS 等传感器融合为稳定定位结果。",
+      "simulation": {
+        "image": "catalog.local/ros2/robot-localization:7dfb6aa",
+        "command": "ros2 launch robot_localization ekf.launch.py",
+        "runtime": "ROS 2",
+        "inputs": ["/imu/data", "/odometry/raw"],
+        "outputs": ["/odometry/filtered", "/tf"],
+        "input_types": {
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odometry/raw": "nav_msgs/msg/Odometry"
+        },
+        "output_types": {
+          "/odometry/filtered": "nav_msgs/msg/Odometry",
+          "/tf": "tf2_msgs/msg/TFMessage"
+        },
+        "color": "#10b981"
+      }
+    },
+    {
+      "id": 106,
+      "catalog_key": "open-rmf-free-fleet",
+      "name": "Open-RMF free_fleet 多机器人调度",
+      "module": "多机器人协同",
+      "language": "C++ / Python / ROS 2",
+      "version": "main@fb75596",
+      "author": "Open-RMF",
+      "repository_url": "https://github.com/open-rmf/free_fleet",
+      "branch": "main",
+      "verified_commit": "fb755962d6d9cd6ec42aa2092941b5fabeca2cb5",
+      "license": "Apache-2.0",
+      "description": "通过 ROS 2、Nav2 与 Zenoh 对接异构机器人，用于舰队任务下发和状态同步。",
+      "simulation": {
+        "image": "catalog.local/ros2/free-fleet:fb75596",
+        "command": "ros2 launch free_fleet_examples nav2_tb3_simulation_fleet_adapter.launch.xml",
+        "runtime": "ROS 2 / Zenoh / Open-RMF",
+        "inputs": ["/fleet_states", "/task_request"],
+        "outputs": ["/robot_commands", "/task_state"],
+        "input_types": {
+          "/fleet_states": "rmf_fleet_msgs/msg/FleetState",
+          "/task_request": "rmf_task_msgs/msg/ApiRequest"
+        },
+        "output_types": {
+          "/robot_commands": "geometry_msgs/msg/PoseStamped",
+          "/task_state": "rmf_task_msgs/msg/ApiResponse"
+        },
+        "color": "#ec4899"
+      }
+    }
+  ]
+}

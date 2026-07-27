@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>本地 3D 机器人查看器</title>
+    <link rel="stylesheet" href="/local-demo.css" />
+    <style>
+      .stage {
+        display: grid;
+        min-height: 520px;
+        place-items: center;
+        perspective: 900px;
+        overflow: hidden;
+      }
+
+      .robot {
+        position: relative;
+        width: 220px;
+        height: 370px;
+        transform-style: preserve-3d;
+        animation: turn 9s linear infinite;
+      }
+
+      .head,
+      .body,
+      .arm,
+      .leg {
+        position: absolute;
+        border: 2px solid #60a5fa;
+        background: linear-gradient(145deg, #1e40af, #0f172a);
+        box-shadow: inset 0 0 22px rgba(96, 165, 250, 0.24), 0 16px 38px rgba(0, 0, 0, 0.3);
+      }
+
+      .head {
+        left: 70px;
+        top: 0;
+        width: 80px;
+        height: 72px;
+        border-radius: 24px;
+      }
+
+      .head::before,
+      .head::after {
+        content: "";
+        position: absolute;
+        top: 26px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #67e8f9;
+        box-shadow: 0 0 18px #22d3ee;
+      }
+
+      .head::before { left: 19px; }
+      .head::after { right: 19px; }
+
+      .body {
+        left: 55px;
+        top: 88px;
+        width: 110px;
+        height: 130px;
+        border-radius: 30px 30px 18px 18px;
+      }
+
+      .body::after {
+        content: "EDGE";
+        position: absolute;
+        left: 28px;
+        top: 46px;
+        color: #bfdbfe;
+        font: 700 15px monospace;
+        letter-spacing: 0.18em;
+      }
+
+      .arm {
+        top: 100px;
+        width: 38px;
+        height: 150px;
+        border-radius: 20px;
+        transform-origin: top;
+      }
+
+      .arm.left { left: 5px; transform: rotate(9deg); }
+      .arm.right { right: 5px; transform: rotate(-9deg); }
+
+      .leg {
+        top: 230px;
+        width: 48px;
+        height: 138px;
+        border-radius: 16px 16px 22px 22px;
+      }
+
+      .leg.left { left: 52px; }
+      .leg.right { right: 52px; }
+
+      @keyframes turn {
+        from { transform: rotateY(-28deg); }
+        50% { transform: rotateY(28deg); }
+        to { transform: rotateY(-28deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <div class="eyebrow">Local model viewer</div>
+          <h1 id="title">机器人 3D 查看器</h1>
+        </div>
+        <div class="status">模型渲染正常</div>
+      </header>
+
+      <section class="grid">
+        <article class="card wide stage">
+          <div class="robot">
+            <div class="head"></div>
+            <div class="body"></div>
+            <div class="arm left"></div>
+            <div class="arm right"></div>
+            <div class="leg left"></div>
+            <div class="leg right"></div>
+          </div>
+        </article>
+        <article class="card side">
+          <h2>模型信息</h2>
+          <div class="list">
+            <div class="list-item"><span class="muted">模型</span><strong>CloudBot-X1</strong></div>
+            <div class="list-item"><span class="muted">自由度</span><strong>18 DOF</strong></div>
+            <div class="list-item"><span class="muted">负载</span><strong>25 kg</strong></div>
+            <div class="list-item"><span class="muted">状态</span><strong style="color:#86efac">可用</strong></div>
+          </div>
+          <p class="muted" style="margin-top:18px">这是本地运行模式的轻量三维预览，接入真实查看器时可通过环境变量覆盖地址。</p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      if (new URLSearchParams(location.search).get("mode") === "assembly") {
+        document.querySelector("#title").textContent = "类脑轴孔装配预览";
+      }
+    </script>
+  </body>
+</html>

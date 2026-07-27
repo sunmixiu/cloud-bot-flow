@@ -1,0 +1,146 @@
+[
+  {
+    "id": 1,
+    "name": "加油机器人-001",
+    "model": "AGV-2000",
+    "chassis": "轮式底盘",
+    "actuator": "夹爪",
+    "working_range": "5mx5m",
+    "weight": "120kg",
+    "loading": "50kg",
+    "battery":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/battery"
+                },
+            "speed": {
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/speed"
+                },
+            "position_topic":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/position"
+                },
+            "vision": {
+                "head":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "left_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_1/stream.m3u8"
+                },
+                "right_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "obstacle":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/voxel_markers"
+                }
+            },
+            "end_effector_force_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/end_effector_force"
+            },
+            "joint_angles_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/joint_angles"
+            }
+  },
+  {
+    "id": 2,
+    "name": "检测机器人-002",
+    "model": "QC-1500",
+    "chassis": "履带底盘",
+    "actuator": "视觉传感器",
+    "working_range": "3mx3m",
+    "weight": "85kg",
+    "loading": "10kg",
+    "battery":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/battery"
+                },
+            "speed": {
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/speed"
+                },
+            "position_topic":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/position"
+                },
+            "vision": {
+                "head":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "left_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_1/stream.m3u8"
+                },
+                "right_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "obstacle":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/voxel_markers"
+                }
+            },
+            "end_effector_force_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/end_effector_force"
+            },
+            "joint_angles_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/joint_angles"
+            }
+  },
+  {
+    "id": 3,
+    "name": "装配机器人-003",
+    "model": "ARM-6000",
+    "chassis": "固定底座",
+    "actuator": "精密夹具",
+    "working_range": "2mx2m",
+    "weight": "200kg",
+    "loading": "25kg",
+    "battery":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/battery"
+                },
+            "speed": {
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/speed"
+                },
+            "position_topic":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/position"
+                },
+            "vision": {
+                "head":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "left_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_1/stream.m3u8"
+                },
+                "right_hand":{
+                    "url":"http://192.168.80.210:8089",
+                    "m3u8":"/streams/cam_0/stream.m3u8"
+                },
+                "obstacle":{
+                    "url":"ws://192.168.80.215:8088",
+                    "topic":"/voxel_markers"
+                }
+            },
+            "end_effector_force_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/end_effector_force"
+            },
+            "joint_angles_topic":{
+                "url":"ws://192.168.80.215:8088",
+                "topic":"/joint_angles"
+            }
+  }
+]

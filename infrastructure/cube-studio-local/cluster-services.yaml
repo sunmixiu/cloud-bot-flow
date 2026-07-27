@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeflow-dashboard-frontend-local
+  namespace: infra
+spec:
+  type: NodePort
+  selector:
+    app: kubeflow-dashboard-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-local
+  namespace: kubeflow
+spec:
+  type: NodePort
+  selector:
+    app: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+      nodePort: 30081

@@ -1,0 +1,7 @@
+{
+  "temperature": 20,
+  "humidity": 50,
+  "pressure": 1013,
+  "wind_speed": 10,
+  "map_image": "http://192.168.80.210:8089/images/map.png"
+}

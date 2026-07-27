@@ -1,0 +1,8 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: workflow-controller
+          args:
+            - --executor-image
+            - localhost:5001/argoproj/argoexec:v3.4.3

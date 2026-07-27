@@ -1,0 +1,5618 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "机器人云边协同",
+      "describe": "机器人任务编排、算法部署与边缘监控",
+      "created_on": "2026-01-10T08:00:00.000Z",
+      "changed_on": "2026-07-24T08:00:00.000Z",
+      "type": "org",
+      "expand": "{}"
+    },
+    {
+      "id": 2,
+      "name": "智能机器人设计",
+      "describe": "机器人部件生成、组合与三维预览",
+      "created_on": "2026-02-01T08:00:00.000Z",
+      "changed_on": "2026-07-24T08:00:00.000Z",
+      "type": "org",
+      "expand": "{}"
+    }
+  ],
+  "algorithms": [
+    {
+      "id": 1,
+      "name": "AI-Design",
+      "describe": "基于参数和需求生成机器人设计方案",
+      "created_on": "2026-02-01T08:00:00.000Z",
+      "changed_on": "2026-07-24T08:00:00.000Z",
+      "entrypoint": "python /app/ai_design.py",
+      "dockerfile": "Dockerfile",
+      "gitpath": "local://algorithms/ai-design",
+      "images_url": "local/ai-design:1.0.0",
+      "project": {
+        "id": 2,
+        "name": "智能机器人设计",
+        "describe": "机器人部件生成、组合与三维预览",
+        "created_on": "2026-02-01T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 2,
+      "name": "SLAM导航算法",
+      "describe": "基于激光雷达的定位、建图与导航",
+      "created_on": "2026-01-12T08:00:00.000Z",
+      "changed_on": "2026-07-20T08:00:00.000Z",
+      "entrypoint": "python /app/slam.py",
+      "dockerfile": "Dockerfile",
+      "gitpath": "local://algorithms/slam",
+      "images_url": "local/slam:2.1.0",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 3,
+      "name": "视觉识别算法",
+      "describe": "面向巡检场景的目标检测与识别",
+      "created_on": "2026-01-15T08:00:00.000Z",
+      "changed_on": "2026-07-21T08:00:00.000Z",
+      "entrypoint": "python /app/vision.py",
+      "dockerfile": "Dockerfile",
+      "gitpath": "local://algorithms/vision",
+      "images_url": "local/vision:1.8.3",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 4,
+      "name": "路径规划算法",
+      "describe": "基于地图和障碍物信息规划安全路径",
+      "created_on": "2026-01-18T08:00:00.000Z",
+      "changed_on": "2026-07-22T08:00:00.000Z",
+      "entrypoint": "python /app/planner.py",
+      "dockerfile": "Dockerfile",
+      "gitpath": "local://algorithms/planner",
+      "images_url": "local/path-planner:1.5.2",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 5,
+      "name": "机械臂控制",
+      "describe": "六自由度机械臂运动与末端执行器控制",
+      "created_on": "2026-01-20T08:00:00.000Z",
+      "changed_on": "2026-07-23T08:00:00.000Z",
+      "entrypoint": "python /app/arm_control.py",
+      "dockerfile": "Dockerfile",
+      "gitpath": "local://algorithms/arm-control",
+      "images_url": "local/arm-control:3.0.1",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 101,
+      "catalog_key": "slam-toolbox",
+      "name": "SLAM Toolbox 2D 建图",
+      "describe": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch slam_toolbox online_async_launch.py",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/SteveMacenski/slam_toolbox",
+      "images_url": "catalog.local/ros2/slam-toolbox:eee0cd5",
+      "image_status": "build-required",
+      "license": "LGPL-2.1",
+      "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 102,
+      "catalog_key": "navigation2",
+      "name": "Nav2 自主导航",
+      "describe": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch nav2_bringup navigation_launch.py",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/ros-navigation/navigation2",
+      "images_url": "catalog.local/ros2/navigation2:193ae1f",
+      "image_status": "build-required",
+      "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+      "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 103,
+      "catalog_key": "apriltag-ros2",
+      "name": "AprilTag ROS 2 视觉定位",
+      "describe": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/christianrauch/apriltag_ros",
+      "images_url": "catalog.local/ros2/apriltag-ros2:beffb4c",
+      "image_status": "build-required",
+      "license": "MIT",
+      "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 104,
+      "catalog_key": "moveit2",
+      "name": "MoveIt 2 机械臂规划",
+      "describe": "ROS 2 机械臂运动规划框架，提供碰撞检测、运动学、轨迹规划和执行接口。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch moveit_resources_panda_moveit_config demo.launch.py",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/moveit/moveit2",
+      "images_url": "catalog.local/ros2/moveit2:f737f20",
+      "image_status": "build-required",
+      "license": "BSD-3-Clause",
+      "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 105,
+      "catalog_key": "robot-localization",
+      "name": "robot_localization 状态估计",
+      "describe": "基于 EKF/UKF 的非线性状态估计，将里程计、IMU 和 GPS 等传感器融合为稳定定位结果。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch robot_localization ekf.launch.py",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/cra-ros-pkg/robot_localization",
+      "images_url": "catalog.local/ros2/robot-localization:7dfb6aa",
+      "image_status": "build-required",
+      "license": "BSD",
+      "verified_commit": "7dfb6aa97b2082185d2fac3420888ae8474bfc1a",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    },
+    {
+      "id": 106,
+      "catalog_key": "open-rmf-free-fleet",
+      "name": "Open-RMF free_fleet 多机器人调度",
+      "describe": "通过 ROS 2、Nav2 与 Zenoh 对接异构机器人，用于舰队任务下发和状态同步。",
+      "created_on": "2026-07-24T10:20:00.000Z",
+      "changed_on": "2026-07-24T10:20:00.000Z",
+      "entrypoint": "ros2 launch free_fleet_examples nav2_tb3_simulation_fleet_adapter.launch.xml",
+      "dockerfile": "Dockerfile.catalog",
+      "gitpath": "https://github.com/open-rmf/free_fleet",
+      "images_url": "catalog.local/ros2/free-fleet:fb75596",
+      "image_status": "build-required",
+      "license": "Apache-2.0",
+      "verified_commit": "fb755962d6d9cd6ec42aa2092941b5fabeca2cb5",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "created_on": "2026-01-10T08:00:00.000Z",
+        "changed_on": "2026-07-24T08:00:00.000Z",
+        "type": "org",
+        "expand": "{}"
+      }
+    }
+  ],
+  "pipelines": [
+    {
+      "id": 1,
+      "name": "物料搬运任务A",
+      "pipeline_url": "<span>物料搬运任务A</span>",
+      "creator": "admin",
+      "modified": "2026-07-24 10:10",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "type": "org"
+      }
+    },
+    {
+      "id": 2,
+      "name": "质量检测流程",
+      "pipeline_url": "<span>质量检测流程</span>",
+      "creator": "admin",
+      "modified": "2026-07-24 10:20",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "type": "org"
+      }
+    },
+    {
+      "id": 3,
+      "name": "精密装配作业",
+      "pipeline_url": "<span>精密装配作业</span>",
+      "creator": "demo",
+      "modified": "2026-07-24 10:30",
+      "project": {
+        "id": 1,
+        "name": "机器人云边协同",
+        "describe": "机器人任务编排、算法部署与边缘监控",
+        "type": "org"
+      }
+    },
+    {
+      "id": 4,
+      "name": "训练场",
+      "pipeline_url": "<span>训练场</span>",
+      "creator": "demo",
+      "modified": "2026-07-24 10:40",
+      "project": {
+        "id": 2,
+        "name": "智能机器人设计",
+        "describe": "机器人部件生成、组合与三维预览",
+        "type": "org"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "id": 1,
+      "icon_html": "dataset",
+      "name": "production-images",
+      "version": "2026.07",
+      "label_html": "<span>生产线图像数据集</span>",
+      "describe": "用于视觉检测和目标识别的生产线图像",
+      "owner": "admin",
+      "path_html": "/data/production-images",
+      "download_url_html": "<span>本地演示数据</span>"
+    },
+    {
+      "id": 2,
+      "icon_html": "dataset",
+      "name": "robot-sensors",
+      "version": "2026.07",
+      "label_html": "<span>机器人传感器数据</span>",
+      "describe": "机器人电量、速度、位姿和关节角度样本",
+      "owner": "admin",
+      "path_html": "/data/robot-sensors",
+      "download_url_html": "<span>本地演示数据</span>"
+    },
+    {
+      "id": 3,
+      "icon_html": "dataset",
+      "name": "quality-samples",
+      "version": "2026.07",
+      "label_html": "<span>质量检测样本库</span>",
+      "describe": "产品质量检测的正常样本和缺陷样本",
+      "owner": "demo",
+      "path_html": "/data/quality-samples",
+      "download_url_html": "<span>本地演示数据</span>"
+    }
+  ],
+  "robots": [
+    {
+      "id": 1,
+      "name": "加油机器人-001",
+      "model": "AGV-2000",
+      "chassis": "轮式底盘",
+      "actuator": "夹爪",
+      "working_range": "5m × 5m",
+      "weight": "120kg",
+      "loading": "50kg",
+      "battery": {
+        "url": "local://telemetry",
+        "topic": "/robot/1/battery"
+      },
+      "speed": {
+        "url": "local://telemetry",
+        "topic": "/robot/1/speed"
+      },
+      "position_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/1/position"
+      },
+      "vision": {
+        "head": {
+          "url": "local://camera",
+          "m3u8": "/camera/1/head"
+        },
+        "left_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/1/left"
+        },
+        "right_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/1/right"
+        },
+        "obstacle": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/obstacle"
+        }
+      },
+      "end_effector_force_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/1/force"
+      },
+      "joint_angles_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/1/joints"
+      }
+    },
+    {
+      "id": 2,
+      "name": "检测机器人-002",
+      "model": "QC-1500",
+      "chassis": "履带底盘",
+      "actuator": "视觉传感器",
+      "working_range": "3m × 3m",
+      "weight": "85kg",
+      "loading": "10kg",
+      "battery": {
+        "url": "local://telemetry",
+        "topic": "/robot/2/battery"
+      },
+      "speed": {
+        "url": "local://telemetry",
+        "topic": "/robot/2/speed"
+      },
+      "position_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/2/position"
+      },
+      "vision": {
+        "head": {
+          "url": "local://camera",
+          "m3u8": "/camera/2/head"
+        },
+        "left_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/2/left"
+        },
+        "right_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/2/right"
+        },
+        "obstacle": {
+          "url": "local://telemetry",
+          "topic": "/robot/2/obstacle"
+        }
+      },
+      "end_effector_force_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/2/force"
+      },
+      "joint_angles_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/2/joints"
+      }
+    },
+    {
+      "id": 3,
+      "name": "装配机器人-003",
+      "model": "ARM-6000",
+      "chassis": "固定底座",
+      "actuator": "精密夹具",
+      "working_range": "2m × 2m",
+      "weight": "200kg",
+      "loading": "25kg",
+      "battery": {
+        "url": "local://telemetry",
+        "topic": "/robot/3/battery"
+      },
+      "speed": {
+        "url": "local://telemetry",
+        "topic": "/robot/3/speed"
+      },
+      "position_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/3/position"
+      },
+      "vision": {
+        "head": {
+          "url": "local://camera",
+          "m3u8": "/camera/3/head"
+        },
+        "left_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/3/left"
+        },
+        "right_hand": {
+          "url": "local://camera",
+          "m3u8": "/camera/3/right"
+        },
+        "obstacle": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/obstacle"
+        }
+      },
+      "end_effector_force_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/3/force"
+      },
+      "joint_angles_topic": {
+        "url": "local://telemetry",
+        "topic": "/robot/3/joints"
+      }
+    }
+  ],
+  "deployments": [
+    {
+      "id": 1,
+      "service": "SLAM导航算法",
+      "edge_node": "local-edge",
+      "robot_host": "local-robot-network",
+      "image": "local/SLAM%E5%AF%BC%E8%88%AA%E7%AE%97%E6%B3%95:latest",
+      "namespace": "robot-demo",
+      "status": "running",
+      "created_at": "2026-07-24T07:55:44.369Z",
+      "message": "算法 SLAM导航算法 已在本地轻量后端完成模拟部署"
+    },
+    {
+      "id": 2,
+      "service": "SLAM导航算法",
+      "edge_node": "local-edge",
+      "robot_host": "local-robot-network",
+      "image": "local/SLAM%E5%AF%BC%E8%88%AA%E7%AE%97%E6%B3%95:latest",
+      "namespace": "robot-demo",
+      "status": "running",
+      "created_at": "2026-07-24T07:57:16.984Z",
+      "message": "算法 SLAM导航算法 已在本地轻量后端完成模拟部署"
+    },
+    {
+      "id": 3,
+      "service": "SLAM导航算法",
+      "edge_node": "local-edge",
+      "robot_host": "local-robot-network",
+      "image": "local/SLAM%E5%AF%BC%E8%88%AA%E7%AE%97%E6%B3%95:latest",
+      "namespace": "robot-demo",
+      "status": "running",
+      "created_at": "2026-07-24T08:12:54.630Z",
+      "message": "算法 SLAM导航算法 已在本地轻量后端完成模拟部署"
+    },
+    {
+      "id": 4,
+      "service": "视觉识别算法",
+      "edge_node": "local-edge",
+      "robot_host": "local-robot-network",
+      "image": "local/%E8%A7%86%E8%A7%89%E8%AF%86%E5%88%AB%E7%AE%97%E6%B3%95:latest",
+      "namespace": "robot-demo",
+      "status": "running",
+      "created_at": "2026-07-24T08:12:54.638Z",
+      "message": "算法 视觉识别算法 已在本地轻量后端完成模拟部署"
+    },
+    {
+      "id": 5,
+      "service": "SLAM导航算法",
+      "edge_node": "local-edge",
+      "robot_host": "local-robot-network",
+      "image": "local/SLAM%E5%AF%BC%E8%88%AA%E7%AE%97%E6%B3%95:latest",
+      "namespace": "robot-demo",
+      "status": "running",
+      "created_at": "2026-07-24T08:24:59.663Z",
+      "message": "算法 SLAM导航算法 已在本地轻量后端完成模拟部署"
+    }
+  ],
+  "codeModules": [
+    {
+      "id": 1,
+      "name": "激光雷达 SLAM",
+      "module": "感知与定位",
+      "language": "C++ / ROS 2",
+      "version": "2.1.0",
+      "author": "张工",
+      "repository_url": "ssh://git.local/robot/slam.git",
+      "branch": "main",
+      "description": "点云预处理、定位、回环检测与地图构建模块",
+      "visibility": "private",
+      "status": "verified",
+      "updated_at": "2026-07-23T08:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "视觉目标检测",
+      "module": "机器视觉",
+      "language": "Python / PyTorch",
+      "version": "1.8.3",
+      "author": "李工",
+      "repository_url": "ssh://git.local/robot/vision-detector.git",
+      "branch": "release/1.8",
+      "description": "工业目标检测、缺陷识别与位姿估计模块",
+      "visibility": "private",
+      "status": "verified",
+      "updated_at": "2026-07-22T06:10:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "机械臂轨迹控制",
+      "module": "运动规划与控制",
+      "language": "C++ / MoveIt 2",
+      "version": "3.0.1",
+      "author": "王工",
+      "repository_url": "ssh://git.local/robot/arm-controller.git",
+      "branch": "main",
+      "description": "逆运动学、轨迹平滑、碰撞检测和末端控制",
+      "visibility": "private",
+      "status": "testing",
+      "updated_at": "2026-07-24T02:20:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "多机器人任务分配",
+      "module": "任务规划",
+      "language": "Python",
+      "version": "0.9.0",
+      "author": "陈工",
+      "repository_url": "ssh://git.local/robot/task-allocation.git",
+      "branch": "develop",
+      "description": "多机器人任务拆解、调度与冲突消解",
+      "visibility": "private",
+      "status": "developing",
+      "updated_at": "2026-07-24T05:00:00.000Z"
+    },
+    {
+      "id": 101,
+      "catalog_key": "slam-toolbox",
+      "name": "SLAM Toolbox 2D 建图",
+      "module": "定位与建图",
+      "language": "C++ / ROS 2",
+      "version": "ros2@eee0cd5",
+      "author": "Steve Macenski / Open Navigation",
+      "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+      "branch": "ros2",
+      "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+      "license": "LGPL-2.1",
+      "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 102,
+      "catalog_key": "navigation2",
+      "name": "Nav2 自主导航",
+      "module": "导航与路径规划",
+      "language": "C++ / ROS 2",
+      "version": "main@193ae1f",
+      "author": "Open Navigation",
+      "repository_url": "https://github.com/ros-navigation/navigation2",
+      "branch": "main",
+      "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+      "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+      "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 103,
+      "catalog_key": "apriltag-ros2",
+      "name": "AprilTag ROS 2 视觉定位",
+      "module": "机器视觉",
+      "language": "C++ / ROS 2",
+      "version": "master@beffb4c",
+      "author": "Christian Rauch / AprilRobotics",
+      "repository_url": "https://github.com/christianrauch/apriltag_ros",
+      "branch": "master",
+      "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+      "license": "MIT",
+      "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 104,
+      "catalog_key": "moveit2",
+      "name": "MoveIt 2 机械臂规划",
+      "module": "运动规划与控制",
+      "language": "C++ / ROS 2",
+      "version": "main@f737f20",
+      "author": "MoveIt Maintainers",
+      "repository_url": "https://github.com/moveit/moveit2",
+      "branch": "main",
+      "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+      "license": "BSD-3-Clause",
+      "description": "ROS 2 机械臂运动规划框架，提供碰撞检测、运动学、轨迹规划和执行接口。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 105,
+      "catalog_key": "robot-localization",
+      "name": "robot_localization 状态估计",
+      "module": "定位与传感器融合",
+      "language": "C++ / ROS 2",
+      "version": "rolling@7dfb6aa",
+      "author": "Charles River Analytics / ROS Community",
+      "repository_url": "https://github.com/cra-ros-pkg/robot_localization",
+      "branch": "rolling-devel",
+      "verified_commit": "7dfb6aa97b2082185d2fac3420888ae8474bfc1a",
+      "license": "BSD",
+      "description": "基于 EKF/UKF 的非线性状态估计，将里程计、IMU 和 GPS 等传感器融合为稳定定位结果。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 106,
+      "catalog_key": "open-rmf-free-fleet",
+      "name": "Open-RMF free_fleet 多机器人调度",
+      "module": "多机器人协同",
+      "language": "C++ / Python / ROS 2",
+      "version": "main@fb75596",
+      "author": "Open-RMF",
+      "repository_url": "https://github.com/open-rmf/free_fleet",
+      "branch": "main",
+      "verified_commit": "fb755962d6d9cd6ec42aa2092941b5fabeca2cb5",
+      "license": "Apache-2.0",
+      "description": "通过 ROS 2、Nav2 与 Zenoh 对接异构机器人，用于舰队任务下发和状态同步。",
+      "visibility": "public",
+      "source": "github",
+      "status": "verified",
+      "updated_at": "2026-07-24T10:20:00.000Z"
+    }
+  ],
+  "simulationAlgorithms": [
+    {
+      "id": 1,
+      "code_module_id": 1,
+      "name": "SLAM导航算法",
+      "module": "感知与定位",
+      "version": "2.1.0",
+      "image": "harbor.local/robot/platform-smoke:20260726-193643",
+      "command": "ros2 launch robot_slam simulation.launch.py",
+      "runtime": "ROS 2 Humble",
+      "inputs": [
+        "/scan",
+        "/imu"
+      ],
+      "outputs": [
+        "/map",
+        "/tf",
+        "/odom"
+      ],
+      "description": "在仿真环境中完成实时定位和地图构建",
+      "status": "ready",
+      "color": "#3b82f6",
+      "image_digest": "sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+      "image_status": "built",
+      "updated_at": "2026-07-26T11:36:52.174Z"
+    },
+    {
+      "id": 2,
+      "code_module_id": 2,
+      "name": "视觉识别算法",
+      "module": "机器视觉",
+      "version": "1.8.3",
+      "image": "harbor.local/robot/vision:1.8.3",
+      "command": "python3 /workspace/detect.py --ros",
+      "runtime": "CUDA 12 / ROS 2",
+      "inputs": [
+        "/camera/color"
+      ],
+      "outputs": [
+        "/detections",
+        "/target_pose"
+      ],
+      "description": "识别工件、障碍物并输出目标位姿",
+      "status": "ready",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": 3,
+      "code_module_id": 3,
+      "name": "路径规划算法",
+      "module": "运动规划与控制",
+      "version": "1.5.2",
+      "image": "harbor.local/robot/path-planner:1.5.2",
+      "command": "ros2 launch path_planner planner.launch.py",
+      "runtime": "ROS 2 Humble",
+      "inputs": [
+        "/map",
+        "/target_pose"
+      ],
+      "outputs": [
+        "/planned_path"
+      ],
+      "description": "根据地图、目标位姿和障碍物生成安全路径",
+      "status": "ready",
+      "color": "#06b6d4"
+    },
+    {
+      "id": 4,
+      "code_module_id": 3,
+      "name": "机械臂控制",
+      "module": "运动规划与控制",
+      "version": "3.0.1",
+      "image": "harbor.local/robot/arm-control:3.0.1",
+      "command": "ros2 launch arm_control moveit_sim.launch.py",
+      "runtime": "MoveIt 2 / ROS 2",
+      "inputs": [
+        "/planned_path",
+        "/joint_states"
+      ],
+      "outputs": [
+        "/joint_trajectory",
+        "/controller_state"
+      ],
+      "description": "驱动机械臂完成轨迹跟踪和末端操作",
+      "status": "ready",
+      "color": "#f59e0b"
+    },
+    {
+      "id": 101,
+      "code_module_id": 101,
+      "catalog_key": "slam-toolbox",
+      "name": "SLAM Toolbox 2D 建图",
+      "module": "定位与建图",
+      "version": "ros2@eee0cd5",
+      "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+      "branch": "ros2",
+      "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+      "license": "LGPL-2.1",
+      "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+      "image_status": "build-required",
+      "command": "ros2 launch slam_toolbox online_async_launch.py",
+      "runtime": "ROS 2",
+      "inputs": [
+        "/scan",
+        "/tf"
+      ],
+      "outputs": [
+        "/map",
+        "/pose",
+        "/tf"
+      ],
+      "input_types": {
+        "/scan": "sensor_msgs/msg/LaserScan",
+        "/tf": "tf2_msgs/msg/TFMessage"
+      },
+      "output_types": {
+        "/map": "nav_msgs/msg/OccupancyGrid",
+        "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+      },
+      "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#3b82f6",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 102,
+      "code_module_id": 102,
+      "catalog_key": "navigation2",
+      "name": "Nav2 自主导航",
+      "module": "导航与路径规划",
+      "version": "main@193ae1f",
+      "repository_url": "https://github.com/ros-navigation/navigation2",
+      "branch": "main",
+      "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+      "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+      "image": "catalog.local/ros2/navigation2:193ae1f",
+      "image_status": "build-required",
+      "command": "ros2 launch nav2_bringup navigation_launch.py",
+      "runtime": "ROS 2",
+      "inputs": [
+        "/map",
+        "/odom",
+        "/goal_pose"
+      ],
+      "outputs": [
+        "/cmd_vel",
+        "/plan",
+        "/navigation_feedback"
+      ],
+      "input_types": {
+        "/map": "nav_msgs/msg/OccupancyGrid",
+        "/odom": "nav_msgs/msg/Odometry",
+        "/goal_pose": "geometry_msgs/msg/PoseStamped"
+      },
+      "output_types": {
+        "/cmd_vel": "geometry_msgs/msg/Twist",
+        "/plan": "nav_msgs/msg/Path"
+      },
+      "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#06b6d4",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 103,
+      "code_module_id": 103,
+      "catalog_key": "apriltag-ros2",
+      "name": "AprilTag ROS 2 视觉定位",
+      "module": "机器视觉",
+      "version": "master@beffb4c",
+      "repository_url": "https://github.com/christianrauch/apriltag_ros",
+      "branch": "master",
+      "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+      "license": "MIT",
+      "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+      "image_status": "build-required",
+      "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+      "runtime": "ROS 2",
+      "inputs": [
+        "/camera/image_raw",
+        "/camera/camera_info"
+      ],
+      "outputs": [
+        "/detections",
+        "/tf"
+      ],
+      "input_types": {
+        "/camera/image_raw": "sensor_msgs/msg/Image",
+        "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+      },
+      "output_types": {
+        "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+        "/tf": "tf2_msgs/msg/TFMessage"
+      },
+      "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#8b5cf6",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 104,
+      "code_module_id": 104,
+      "catalog_key": "moveit2",
+      "name": "MoveIt 2 机械臂规划",
+      "module": "运动规划与控制",
+      "version": "main@f737f20",
+      "repository_url": "https://github.com/moveit/moveit2",
+      "branch": "main",
+      "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+      "license": "BSD-3-Clause",
+      "image": "catalog.local/ros2/moveit2:f737f20",
+      "image_status": "build-required",
+      "command": "ros2 launch moveit_resources_panda_moveit_config demo.launch.py",
+      "runtime": "MoveIt 2 / ROS 2",
+      "inputs": [
+        "/joint_states",
+        "/planning_scene",
+        "/motion_plan_request"
+      ],
+      "outputs": [
+        "/joint_trajectory",
+        "/display_planned_path"
+      ],
+      "input_types": {
+        "/joint_states": "sensor_msgs/msg/JointState",
+        "/planning_scene": "moveit_msgs/msg/PlanningScene",
+        "/motion_plan_request": "moveit_msgs/msg/MotionPlanRequest"
+      },
+      "output_types": {
+        "/joint_trajectory": "trajectory_msgs/msg/JointTrajectory",
+        "/display_planned_path": "moveit_msgs/msg/DisplayTrajectory"
+      },
+      "description": "ROS 2 机械臂运动规划框架，提供碰撞检测、运动学、轨迹规划和执行接口。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#f59e0b",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 105,
+      "code_module_id": 105,
+      "catalog_key": "robot-localization",
+      "name": "robot_localization 状态估计",
+      "module": "定位与传感器融合",
+      "version": "rolling@7dfb6aa",
+      "repository_url": "https://github.com/cra-ros-pkg/robot_localization",
+      "branch": "rolling-devel",
+      "verified_commit": "7dfb6aa97b2082185d2fac3420888ae8474bfc1a",
+      "license": "BSD",
+      "image": "catalog.local/ros2/robot-localization:7dfb6aa",
+      "image_status": "build-required",
+      "command": "ros2 launch robot_localization ekf.launch.py",
+      "runtime": "ROS 2",
+      "inputs": [
+        "/imu/data",
+        "/odometry/raw"
+      ],
+      "outputs": [
+        "/odometry/filtered",
+        "/tf"
+      ],
+      "input_types": {
+        "/imu/data": "sensor_msgs/msg/Imu",
+        "/odometry/raw": "nav_msgs/msg/Odometry"
+      },
+      "output_types": {
+        "/odometry/filtered": "nav_msgs/msg/Odometry",
+        "/tf": "tf2_msgs/msg/TFMessage"
+      },
+      "description": "基于 EKF/UKF 的非线性状态估计，将里程计、IMU 和 GPS 等传感器融合为稳定定位结果。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#10b981",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    },
+    {
+      "id": 106,
+      "code_module_id": 106,
+      "catalog_key": "open-rmf-free-fleet",
+      "name": "Open-RMF free_fleet 多机器人调度",
+      "module": "多机器人协同",
+      "version": "main@fb75596",
+      "repository_url": "https://github.com/open-rmf/free_fleet",
+      "branch": "main",
+      "verified_commit": "fb755962d6d9cd6ec42aa2092941b5fabeca2cb5",
+      "license": "Apache-2.0",
+      "image": "catalog.local/ros2/free-fleet:fb75596",
+      "image_status": "build-required",
+      "command": "ros2 launch free_fleet_examples nav2_tb3_simulation_fleet_adapter.launch.xml",
+      "runtime": "ROS 2 / Zenoh / Open-RMF",
+      "inputs": [
+        "/fleet_states",
+        "/task_request"
+      ],
+      "outputs": [
+        "/robot_commands",
+        "/task_state"
+      ],
+      "input_types": {
+        "/fleet_states": "rmf_fleet_msgs/msg/FleetState",
+        "/task_request": "rmf_task_msgs/msg/ApiRequest"
+      },
+      "output_types": {
+        "/robot_commands": "geometry_msgs/msg/PoseStamped",
+        "/task_state": "rmf_task_msgs/msg/ApiResponse"
+      },
+      "description": "通过 ROS 2、Nav2 与 Zenoh 对接异构机器人，用于舰队任务下发和状态同步。",
+      "status": "verified-source",
+      "execution_adapter": "browser-digital-twin",
+      "color": "#ec4899",
+      "verified_at": "2026-07-24T10:20:00.000Z"
+    }
+  ],
+  "simulationRuns": [
+    {
+      "id": "sim-1784881327679",
+      "workflow_name": "API??",
+      "robot": {
+        "id": 1,
+        "name": "?????-001"
+      },
+      "algorithms": [
+        {
+          "id": 1,
+          "code_module_id": 1,
+          "name": "SLAM导航算法",
+          "module": "感知与定位",
+          "version": "2.1.0",
+          "image": "harbor.local/robot/slam:2.1.0",
+          "command": "ros2 launch robot_slam simulation.launch.py",
+          "runtime": "ROS 2 Humble",
+          "inputs": [
+            "/scan",
+            "/imu"
+          ],
+          "outputs": [
+            "/map",
+            "/tf",
+            "/odom"
+          ],
+          "description": "在仿真环境中完成实时定位和地图构建",
+          "status": "ready",
+          "color": "#3b82f6"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "interrupted",
+      "progress": 0,
+      "started_at": "2026-07-24T08:22:07.679Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 34,
+        "memory_usage": 41,
+        "sim_time": 0
+      },
+      "finished_at": "2026-07-24T09:46:46.706Z",
+      "updated_at": "2026-07-24T09:46:46.706Z",
+      "interruption_reason": "服务重启后未发现可恢复的执行器"
+    },
+    {
+      "id": "sim-1784881407517",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 1,
+          "code_module_id": 1,
+          "name": "SLAM导航算法",
+          "module": "感知与定位",
+          "version": "2.1.0",
+          "image": "harbor.local/robot/slam:2.1.0",
+          "command": "ros2 launch robot_slam simulation.launch.py",
+          "runtime": "ROS 2 Humble",
+          "inputs": [
+            "/scan",
+            "/imu"
+          ],
+          "outputs": [
+            "/map",
+            "/tf",
+            "/odom"
+          ],
+          "description": "在仿真环境中完成实时定位和地图构建",
+          "status": "ready",
+          "color": "#3b82f6"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "started_at": "2026-07-24T08:23:27.517Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 34,
+        "memory_usage": 41,
+        "sim_time": 0
+      },
+      "finished_at": "2026-07-24T08:23:35.925Z",
+      "updated_at": "2026-07-24T08:23:35.927Z"
+    },
+    {
+      "id": "sim-1784883849012",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 1,
+          "code_module_id": 1,
+          "name": "SLAM导航算法",
+          "module": "感知与定位",
+          "version": "2.1.0",
+          "image": "harbor.local/robot/slam:2.1.0",
+          "command": "ros2 launch robot_slam simulation.launch.py",
+          "runtime": "ROS 2 Humble",
+          "inputs": [
+            "/scan",
+            "/imu"
+          ],
+          "outputs": [
+            "/map",
+            "/tf",
+            "/odom"
+          ],
+          "description": "在仿真环境中完成实时定位和地图构建",
+          "status": "ready",
+          "color": "#3b82f6"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "started_at": "2026-07-24T09:04:09.012Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 34,
+        "memory_usage": 41,
+        "sim_time": 0
+      },
+      "finished_at": "2026-07-24T09:04:17.426Z",
+      "updated_at": "2026-07-24T09:04:17.428Z"
+    },
+    {
+      "id": "sim-1784885009567",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 103,
+          "code_module_id": 103,
+          "catalog_key": "apriltag-ros2",
+          "name": "AprilTag ROS 2 视觉定位",
+          "module": "机器视觉",
+          "version": "master@beffb4c",
+          "repository_url": "https://github.com/christianrauch/apriltag_ros",
+          "branch": "master",
+          "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+          "license": "MIT",
+          "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+          "image_status": "build-required",
+          "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/camera/image_raw",
+            "/camera/camera_info"
+          ],
+          "outputs": [
+            "/detections",
+            "/tf"
+          ],
+          "input_types": {
+            "/camera/image_raw": "sensor_msgs/msg/Image",
+            "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+          },
+          "output_types": {
+            "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#8b5cf6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-digital-twin",
+      "compatibility": {
+        "runnable": true,
+        "scene": "warehouse",
+        "execution_mode": "browser-digital-twin",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "Nav2 自主导航 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "AprilTag ROS 2 视觉定位 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 103,
+            "name": "AprilTag ROS 2 视觉定位",
+            "inputs": [
+              "/camera/image_raw",
+              "/camera/camera_info"
+            ],
+            "outputs": [
+              "/detections",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": [
+          "/scan",
+          "/tf",
+          "/imu",
+          "/imu/data",
+          "/odom",
+          "/odometry/raw",
+          "/camera/color",
+          "/camera/image_raw",
+          "/camera/camera_info",
+          "/joint_states",
+          "/planning_scene",
+          "/motion_plan_request",
+          "/goal_pose",
+          "/fleet_states",
+          "/task_request",
+          "/map",
+          "/pose",
+          "/cmd_vel",
+          "/plan",
+          "/navigation_feedback",
+          "/detections"
+        ]
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        },
+        {
+          "id": 103,
+          "name": "AprilTag ROS 2 视觉定位",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:23:29.568Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 45,
+        "memory_usage": 46,
+        "sim_time": 42
+      },
+      "updated_at": "2026-07-24T09:23:37.981Z",
+      "finished_at": "2026-07-24T09:23:37.979Z"
+    },
+    {
+      "id": "sim-1784885028454",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 103,
+          "code_module_id": 103,
+          "catalog_key": "apriltag-ros2",
+          "name": "AprilTag ROS 2 视觉定位",
+          "module": "机器视觉",
+          "version": "master@beffb4c",
+          "repository_url": "https://github.com/christianrauch/apriltag_ros",
+          "branch": "master",
+          "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+          "license": "MIT",
+          "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+          "image_status": "build-required",
+          "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/camera/image_raw",
+            "/camera/camera_info"
+          ],
+          "outputs": [
+            "/detections",
+            "/tf"
+          ],
+          "input_types": {
+            "/camera/image_raw": "sensor_msgs/msg/Image",
+            "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+          },
+          "output_types": {
+            "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#8b5cf6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-digital-twin",
+      "compatibility": {
+        "runnable": true,
+        "scene": "warehouse",
+        "execution_mode": "browser-digital-twin",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "Nav2 自主导航 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "AprilTag ROS 2 视觉定位 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 103,
+            "name": "AprilTag ROS 2 视觉定位",
+            "inputs": [
+              "/camera/image_raw",
+              "/camera/camera_info"
+            ],
+            "outputs": [
+              "/detections",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": [
+          "/scan",
+          "/tf",
+          "/imu",
+          "/imu/data",
+          "/odom",
+          "/odometry/raw",
+          "/camera/color",
+          "/camera/image_raw",
+          "/camera/camera_info",
+          "/joint_states",
+          "/planning_scene",
+          "/motion_plan_request",
+          "/goal_pose",
+          "/fleet_states",
+          "/task_request",
+          "/map",
+          "/pose",
+          "/cmd_vel",
+          "/plan",
+          "/navigation_feedback",
+          "/detections"
+        ]
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        },
+        {
+          "id": 103,
+          "name": "AprilTag ROS 2 视觉定位",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:23:48.454Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 45,
+        "memory_usage": 46,
+        "sim_time": 42
+      },
+      "updated_at": "2026-07-24T09:23:56.864Z",
+      "finished_at": "2026-07-24T09:23:56.864Z"
+    },
+    {
+      "id": "sim-1784885066562",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 103,
+          "code_module_id": 103,
+          "catalog_key": "apriltag-ros2",
+          "name": "AprilTag ROS 2 视觉定位",
+          "module": "机器视觉",
+          "version": "master@beffb4c",
+          "repository_url": "https://github.com/christianrauch/apriltag_ros",
+          "branch": "master",
+          "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+          "license": "MIT",
+          "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+          "image_status": "build-required",
+          "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/camera/image_raw",
+            "/camera/camera_info"
+          ],
+          "outputs": [
+            "/detections",
+            "/tf"
+          ],
+          "input_types": {
+            "/camera/image_raw": "sensor_msgs/msg/Image",
+            "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+          },
+          "output_types": {
+            "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#8b5cf6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-digital-twin",
+      "compatibility": {
+        "runnable": true,
+        "scene": "warehouse",
+        "execution_mode": "browser-digital-twin",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "Nav2 自主导航 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "AprilTag ROS 2 视觉定位 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 103,
+            "name": "AprilTag ROS 2 视觉定位",
+            "inputs": [
+              "/camera/image_raw",
+              "/camera/camera_info"
+            ],
+            "outputs": [
+              "/detections",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": [
+          "/scan",
+          "/tf",
+          "/imu",
+          "/imu/data",
+          "/odom",
+          "/odometry/raw",
+          "/camera/color",
+          "/camera/image_raw",
+          "/camera/camera_info",
+          "/joint_states",
+          "/planning_scene",
+          "/motion_plan_request",
+          "/goal_pose",
+          "/fleet_states",
+          "/task_request",
+          "/map",
+          "/pose",
+          "/cmd_vel",
+          "/plan",
+          "/navigation_feedback",
+          "/detections"
+        ]
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        },
+        {
+          "id": 103,
+          "name": "AprilTag ROS 2 视觉定位",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:24:26.562Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 45,
+        "memory_usage": 46,
+        "sim_time": 42
+      },
+      "updated_at": "2026-07-24T09:24:34.972Z",
+      "finished_at": "2026-07-24T09:24:34.971Z"
+    },
+    {
+      "id": "sim-1784885076755",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 103,
+          "code_module_id": 103,
+          "catalog_key": "apriltag-ros2",
+          "name": "AprilTag ROS 2 视觉定位",
+          "module": "机器视觉",
+          "version": "master@beffb4c",
+          "repository_url": "https://github.com/christianrauch/apriltag_ros",
+          "branch": "master",
+          "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+          "license": "MIT",
+          "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+          "image_status": "build-required",
+          "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/camera/image_raw",
+            "/camera/camera_info"
+          ],
+          "outputs": [
+            "/detections",
+            "/tf"
+          ],
+          "input_types": {
+            "/camera/image_raw": "sensor_msgs/msg/Image",
+            "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+          },
+          "output_types": {
+            "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#8b5cf6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-digital-twin",
+      "compatibility": {
+        "runnable": true,
+        "scene": "warehouse",
+        "execution_mode": "browser-digital-twin",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "Nav2 自主导航 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "AprilTag ROS 2 视觉定位 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 103,
+            "name": "AprilTag ROS 2 视觉定位",
+            "inputs": [
+              "/camera/image_raw",
+              "/camera/camera_info"
+            ],
+            "outputs": [
+              "/detections",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": [
+          "/scan",
+          "/tf",
+          "/imu",
+          "/imu/data",
+          "/odom",
+          "/odometry/raw",
+          "/camera/color",
+          "/camera/image_raw",
+          "/camera/camera_info",
+          "/joint_states",
+          "/planning_scene",
+          "/motion_plan_request",
+          "/goal_pose",
+          "/fleet_states",
+          "/task_request",
+          "/map",
+          "/pose",
+          "/cmd_vel",
+          "/plan",
+          "/navigation_feedback",
+          "/detections"
+        ]
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        },
+        {
+          "id": 103,
+          "name": "AprilTag ROS 2 视觉定位",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:24:36.755Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 45,
+        "memory_usage": 46,
+        "sim_time": 42
+      },
+      "updated_at": "2026-07-24T09:24:45.166Z",
+      "finished_at": "2026-07-24T09:24:45.165Z"
+    },
+    {
+      "id": "sim-1784885106930",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 103,
+          "code_module_id": 103,
+          "catalog_key": "apriltag-ros2",
+          "name": "AprilTag ROS 2 视觉定位",
+          "module": "机器视觉",
+          "version": "master@beffb4c",
+          "repository_url": "https://github.com/christianrauch/apriltag_ros",
+          "branch": "master",
+          "verified_commit": "beffb4c73bdd04fb6347d612e3306f75bb06c7e7",
+          "license": "MIT",
+          "image": "catalog.local/ros2/apriltag-ros2:beffb4c",
+          "image_status": "build-required",
+          "command": "ros2 launch apriltag_ros camera_36h11.launch.yml",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/camera/image_raw",
+            "/camera/camera_info"
+          ],
+          "outputs": [
+            "/detections",
+            "/tf"
+          ],
+          "input_types": {
+            "/camera/image_raw": "sensor_msgs/msg/Image",
+            "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+          },
+          "output_types": {
+            "/detections": "apriltag_msgs/msg/AprilTagDetectionArray",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "description": "AprilTag ROS 2 检测节点，输出标签编号、位姿和 TF，可用于视觉定位与抓取。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#8b5cf6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-digital-twin",
+      "compatibility": {
+        "runnable": true,
+        "scene": "warehouse",
+        "execution_mode": "browser-digital-twin",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "Nav2 自主导航 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像",
+          "AprilTag ROS 2 视觉定位 当前使用数字孪生适配器；投入真实 Docker 运行前需要由 CI 构建内部镜像"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 103,
+            "name": "AprilTag ROS 2 视觉定位",
+            "inputs": [
+              "/camera/image_raw",
+              "/camera/camera_info"
+            ],
+            "outputs": [
+              "/detections",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": [
+          "/scan",
+          "/tf",
+          "/imu",
+          "/imu/data",
+          "/odom",
+          "/odometry/raw",
+          "/camera/color",
+          "/camera/image_raw",
+          "/camera/camera_info",
+          "/joint_states",
+          "/planning_scene",
+          "/motion_plan_request",
+          "/goal_pose",
+          "/fleet_states",
+          "/task_request",
+          "/map",
+          "/pose",
+          "/cmd_vel",
+          "/plan",
+          "/navigation_feedback",
+          "/detections"
+        ]
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        },
+        {
+          "id": 103,
+          "name": "AprilTag ROS 2 视觉定位",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:25:06.930Z",
+      "metrics": {
+        "realtime_factor": 0.98,
+        "collision_count": 0,
+        "cpu_usage": 45,
+        "memory_usage": 46,
+        "sim_time": 42
+      },
+      "updated_at": "2026-07-24T09:25:32.304Z",
+      "finished_at": "2026-07-24T09:25:32.303Z"
+    },
+    {
+      "id": "sim-76c20dc2-fb3d-4d70-917c-bd2d64fabad9",
+      "workflow_name": "API??-??",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 4242,
+        "fault_mode": "none"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "API??-??",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 101,
+            "catalog_key": "slam-toolbox",
+            "name": "SLAM Toolbox 2D 建图",
+            "version": "ros2@eee0cd5",
+            "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+            "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+            "image_status": "build-required"
+          },
+          {
+            "order": 1,
+            "id": 102,
+            "catalog_key": "navigation2",
+            "name": "Nav2 自主导航",
+            "version": "main@193ae1f",
+            "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+            "image": "catalog.local/ros2/navigation2:193ae1f",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 4242,
+        "fault_mode": "none",
+        "sha256": "d962e58cecc5e0929b3037f1e95bfd20bc22302da57a8345dd2d841dcb19b1ec"
+      },
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 94,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查",
+          "Nav2 自主导航 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "version": "ros2@eee0cd5",
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "version": "main@193ae1f",
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped",
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path",
+          "/navigation_feedback": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:47:38.697Z",
+      "updated_at": "2026-07-24T09:47:51.769Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 12000,
+      "elapsed_ms": 12000,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-24T09:47:38.698Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 94",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-24T09:47:38.698Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-76c20dc2-fb3d-4d70-917c-bd2d64fabad9",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-24T09:47:38.698Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "d962e58cecc5e0929b3037f1e95bfd20bc22302da57a8345dd2d841dcb19b1ec",
+            "seed": 4242,
+            "fault_mode": "none"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "type": "perception",
+          "message": "合成传感器数据流已建立",
+          "payload": {
+            "progress": 20,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "type": "planning",
+          "message": "数字孪生路径事件已生成（非真实规划证据）",
+          "payload": {
+            "progress": 45,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "type": "control",
+          "message": "合成轨迹控制事件正在推进",
+          "payload": {
+            "progress": 70,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 7,
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "type": "result",
+          "message": "数字孪生流程演示完成；未执行物理仿真验收",
+          "payload": {
+            "progress": 100,
+            "evidence_level": "synthetic"
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.97,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 12,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.769Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 8,
+        "y": 1.6,
+        "heading": -0.23,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-24T09:47:51.769Z"
+      },
+      "finished_at": "2026-07-24T09:47:51.769Z",
+      "outcome": {
+        "code": "digital-twin-demo-completed",
+        "validation_result": "not_evaluated",
+        "publishable": false,
+        "reason": "该运行只产生合成数字孪生事件，未连接 ROS 2/Gazebo 执行器"
+      }
+    },
+    {
+      "id": "sim-a16ba4c6-d6a5-44c7-9dcd-bd5f76a1fe9b",
+      "workflow_name": "API??-?????",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 4242,
+        "fault_mode": "sensor-dropout"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "API??-?????",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 101,
+            "catalog_key": "slam-toolbox",
+            "name": "SLAM Toolbox 2D 建图",
+            "version": "ros2@eee0cd5",
+            "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+            "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+            "image_status": "build-required"
+          },
+          {
+            "order": 1,
+            "id": 102,
+            "catalog_key": "navigation2",
+            "name": "Nav2 自主导航",
+            "version": "main@193ae1f",
+            "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+            "image": "catalog.local/ros2/navigation2:193ae1f",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 4242,
+        "fault_mode": "sensor-dropout",
+        "sha256": "cc0d9cf1e4c3bb015b16a1486a5f908e090dbb73c6584d90a3ae00018e871459"
+      },
+      "status": "failed",
+      "progress": 100,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 94,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查",
+          "Nav2 自主导航 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "version": "ros2@eee0cd5",
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "version": "main@193ae1f",
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped",
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path",
+          "/navigation_feedback": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "failed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "canceled"
+        }
+      ],
+      "started_at": "2026-07-24T09:47:38.708Z",
+      "updated_at": "2026-07-24T09:47:51.774Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 0,
+      "elapsed_ms": 12000,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-24T09:47:38.708Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 94",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-24T09:47:38.708Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-a16ba4c6-d6a5-44c7-9dcd-bd5f76a1fe9b",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-24T09:47:38.708Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "cc0d9cf1e4c3bb015b16a1486a5f908e090dbb73c6584d90a3ae00018e871459",
+            "seed": 4242,
+            "fault_mode": "sensor-dropout"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "type": "assertion_failed",
+          "message": "合成传感器中断已触发安全停止",
+          "payload": {
+            "progress": 100,
+            "evidence_level": "synthetic",
+            "seed": 4242
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.97,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 12,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:51.774Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 8,
+        "y": 1.6,
+        "heading": -0.23,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-24T09:47:51.774Z"
+      },
+      "finished_at": "2026-07-24T09:47:51.774Z",
+      "failure_reason": "合成传感器中断已触发安全停止",
+      "outcome": {
+        "code": "synthetic-sensor-dropout",
+        "validation_result": "rehearsal_assertion_failed",
+        "publishable": false,
+        "reason": "合成传感器中断已触发安全停止"
+      }
+    },
+    {
+      "id": "sim-93e626a1-610e-4eff-bb76-ba2946e0d251",
+      "workflow_name": "API??-???",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 4242,
+        "fault_mode": "none"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "API??-???",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 101,
+            "catalog_key": "slam-toolbox",
+            "name": "SLAM Toolbox 2D 建图",
+            "version": "ros2@eee0cd5",
+            "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+            "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+            "image_status": "build-required"
+          },
+          {
+            "order": 1,
+            "id": 102,
+            "catalog_key": "navigation2",
+            "name": "Nav2 自主导航",
+            "version": "main@193ae1f",
+            "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+            "image": "catalog.local/ros2/navigation2:193ae1f",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 4242,
+        "fault_mode": "none",
+        "sha256": "1c22b54645bf6befb5dc58fdbfde34c264487a43bc17170f27d0bbb6401c675e"
+      },
+      "status": "canceled",
+      "progress": 0,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 94,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查",
+          "Nav2 自主导航 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "version": "ros2@eee0cd5",
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "version": "main@193ae1f",
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped",
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path",
+          "/navigation_feedback": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "canceled"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "canceled"
+        }
+      ],
+      "started_at": "2026-07-24T09:47:38.713Z",
+      "updated_at": "2026-07-24T09:47:38.743Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 11,
+      "elapsed_ms": 11,
+      "revision": 4,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-24T09:47:38.713Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 94",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-24T09:47:38.713Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-93e626a1-610e-4eff-bb76-ba2946e0d251",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-24T09:47:38.713Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "1c22b54645bf6befb5dc58fdbfde34c264487a43bc17170f27d0bbb6401c675e",
+            "seed": 4242,
+            "fault_mode": "none"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-24T09:47:38.720Z",
+          "type": "control",
+          "message": "运行已在 0% 暂停",
+          "payload": {}
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-24T09:47:38.738Z",
+          "type": "control",
+          "message": "运行已恢复",
+          "payload": {}
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "type": "control",
+          "message": "运行已取消",
+          "payload": {}
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.95,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 0,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:47:38.743Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 0,
+        "y": 0,
+        "heading": 0,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-24T09:47:38.743Z"
+      },
+      "finished_at": "2026-07-24T09:47:38.743Z",
+      "outcome": {
+        "code": "canceled",
+        "validation_result": "not_evaluated",
+        "publishable": false
+      }
+    },
+    {
+      "id": "sim-496a4800-78df-49ba-9e35-aa10da8ba1fa",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 20260724,
+        "fault_mode": "none"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "仿真实验室工作流",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 101,
+            "catalog_key": "slam-toolbox",
+            "name": "SLAM Toolbox 2D 建图",
+            "version": "ros2@eee0cd5",
+            "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+            "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+            "image_status": "build-required"
+          },
+          {
+            "order": 1,
+            "id": 102,
+            "catalog_key": "navigation2",
+            "name": "Nav2 自主导航",
+            "version": "main@193ae1f",
+            "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+            "image": "catalog.local/ros2/navigation2:193ae1f",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 20260724,
+        "fault_mode": "none",
+        "sha256": "76798c8a9ce1091587fd8ea18e2dfcc648ec9c4075e5bad03658ef5f6b4a34d2"
+      },
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 94,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查",
+          "Nav2 自主导航 仅在合成数字孪生执行器中演示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "version": "ros2@eee0cd5",
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "version": "main@193ae1f",
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped",
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path",
+          "/navigation_feedback": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "completed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-24T09:49:47.224Z",
+      "updated_at": "2026-07-24T09:49:59.594Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 12000,
+      "elapsed_ms": 12000,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-24T09:49:47.225Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 94",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-24T09:49:47.225Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-496a4800-78df-49ba-9e35-aa10da8ba1fa",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-24T09:49:47.225Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "76798c8a9ce1091587fd8ea18e2dfcc648ec9c4075e5bad03658ef5f6b4a34d2",
+            "seed": 20260724,
+            "fault_mode": "none"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-24T09:49:49.841Z",
+          "type": "perception",
+          "message": "合成传感器数据流已建立",
+          "payload": {
+            "progress": 20,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-24T09:49:53.091Z",
+          "type": "planning",
+          "message": "数字孪生路径事件已生成（非真实规划证据）",
+          "payload": {
+            "progress": 45,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-24T09:49:55.691Z",
+          "type": "control",
+          "message": "合成轨迹控制事件正在推进",
+          "payload": {
+            "progress": 70,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 7,
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "type": "result",
+          "message": "数字孪生流程演示完成；未执行物理仿真验收",
+          "payload": {
+            "progress": 100,
+            "evidence_level": "synthetic"
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.97,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 12,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:49:59.594Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 8,
+        "y": 1.6,
+        "heading": -0.23,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-24T09:49:59.594Z"
+      },
+      "finished_at": "2026-07-24T09:49:59.594Z",
+      "outcome": {
+        "code": "digital-twin-demo-completed",
+        "validation_result": "not_evaluated",
+        "publishable": false,
+        "reason": "该运行只产生合成数字孪生事件，未连接 ROS 2/Gazebo 执行器"
+      }
+    },
+    {
+      "id": "sim-9bd8e005-1e13-4edc-9e48-532fc6c57517",
+      "workflow_name": "浏览器故障回归",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 101,
+          "code_module_id": 101,
+          "catalog_key": "slam-toolbox",
+          "name": "SLAM Toolbox 2D 建图",
+          "module": "定位与建图",
+          "version": "ros2@eee0cd5",
+          "repository_url": "https://github.com/SteveMacenski/slam_toolbox",
+          "branch": "ros2",
+          "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+          "license": "LGPL-2.1",
+          "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+          "image_status": "build-required",
+          "command": "ros2 launch slam_toolbox online_async_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/scan",
+            "/tf"
+          ],
+          "outputs": [
+            "/map",
+            "/pose",
+            "/tf"
+          ],
+          "input_types": {
+            "/scan": "sensor_msgs/msg/LaserScan",
+            "/tf": "tf2_msgs/msg/TFMessage"
+          },
+          "output_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+          },
+          "description": "ROS 2 的二维建图、定位、回环检测与终身地图维护工具。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#3b82f6",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        },
+        {
+          "id": 102,
+          "code_module_id": 102,
+          "catalog_key": "navigation2",
+          "name": "Nav2 自主导航",
+          "module": "导航与路径规划",
+          "version": "main@193ae1f",
+          "repository_url": "https://github.com/ros-navigation/navigation2",
+          "branch": "main",
+          "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+          "license": "多许可证（Apache-2.0 / BSD-3-Clause / LGPL-2.1+）",
+          "image": "catalog.local/ros2/navigation2:193ae1f",
+          "image_status": "build-required",
+          "command": "ros2 launch nav2_bringup navigation_launch.py",
+          "runtime": "ROS 2",
+          "inputs": [
+            "/map",
+            "/odom",
+            "/goal_pose"
+          ],
+          "outputs": [
+            "/cmd_vel",
+            "/plan",
+            "/navigation_feedback"
+          ],
+          "input_types": {
+            "/map": "nav_msgs/msg/OccupancyGrid",
+            "/odom": "nav_msgs/msg/Odometry",
+            "/goal_pose": "geometry_msgs/msg/PoseStamped"
+          },
+          "output_types": {
+            "/cmd_vel": "geometry_msgs/msg/Twist",
+            "/plan": "nav_msgs/msg/Path"
+          },
+          "description": "ROS 2 自主导航框架，包含规划、控制、行为树、代价地图与安全监控。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#06b6d4",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 4242,
+        "fault_mode": "sensor-dropout"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "浏览器故障回归",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 101,
+            "catalog_key": "slam-toolbox",
+            "name": "SLAM Toolbox 2D 建图",
+            "version": "ros2@eee0cd5",
+            "verified_commit": "eee0cd5e4a161bb10f8334b5420c93876b31ca99",
+            "image": "catalog.local/ros2/slam-toolbox:eee0cd5",
+            "image_status": "build-required"
+          },
+          {
+            "order": 1,
+            "id": 102,
+            "catalog_key": "navigation2",
+            "name": "Nav2 自主导航",
+            "version": "main@193ae1f",
+            "verified_commit": "193ae1f95c62d4c782e09fa40beffa259f81ab92",
+            "image": "catalog.local/ros2/navigation2:193ae1f",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 4242,
+        "fault_mode": "sensor-dropout",
+        "sha256": "66daa0b311176c3b70706bdb1f6e6e8bacc18d223def06bb121ab328c2f3058d"
+      },
+      "status": "failed",
+      "progress": 59,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 94,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "SLAM Toolbox 2D 建图 仅在合成编排演练中展示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查",
+          "Nav2 自主导航 仅在合成编排演练中展示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 101,
+            "version": "ros2@eee0cd5",
+            "name": "SLAM Toolbox 2D 建图",
+            "inputs": [
+              "/scan",
+              "/tf"
+            ],
+            "outputs": [
+              "/map",
+              "/pose",
+              "/tf"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          },
+          {
+            "id": 102,
+            "version": "main@193ae1f",
+            "name": "Nav2 自主导航",
+            "inputs": [
+              "/map",
+              "/odom",
+              "/goal_pose"
+            ],
+            "outputs": [
+              "/cmd_vel",
+              "/plan",
+              "/navigation_feedback"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "nav_msgs/msg/OccupancyGrid",
+          "/pose": "geometry_msgs/msg/PoseWithCovarianceStamped",
+          "/cmd_vel": "geometry_msgs/msg/Twist",
+          "/plan": "nav_msgs/msg/Path",
+          "/navigation_feedback": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 101,
+          "name": "SLAM Toolbox 2D 建图",
+          "status": "failed"
+        },
+        {
+          "id": 102,
+          "name": "Nav2 自主导航",
+          "status": "canceled"
+        }
+      ],
+      "started_at": "2026-07-24T09:53:08.138Z",
+      "updated_at": "2026-07-24T09:53:15.248Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 0,
+      "elapsed_ms": 7110,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-24T09:53:08.139Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 94",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-24T09:53:08.139Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-9bd8e005-1e13-4edc-9e48-532fc6c57517",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-24T09:53:08.139Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "66daa0b311176c3b70706bdb1f6e6e8bacc18d223def06bb121ab328c2f3058d",
+            "seed": 4242,
+            "fault_mode": "sensor-dropout"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-24T09:53:12.648Z",
+          "type": "perception",
+          "message": "合成传感器数据流已建立",
+          "payload": {
+            "progress": 20,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-24T09:53:13.952Z",
+          "type": "planning",
+          "message": "合成路径事件已生成（非真实规划证据）",
+          "payload": {
+            "progress": 45,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-24T09:53:15.249Z",
+          "type": "assertion_failed",
+          "message": "合成传感器中断已触发安全停止",
+          "payload": {
+            "progress": 59,
+            "evidence_level": "synthetic",
+            "seed": 4242
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.93,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:53:15.248Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:53:15.248Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:53:15.248Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:53:15.248Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 7.1,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-24T09:53:15.248Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 4.72,
+        "y": -1.76,
+        "heading": -0.05,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-24T09:53:15.248Z"
+      },
+      "finished_at": "2026-07-24T09:53:15.248Z",
+      "failure_reason": "合成传感器中断已触发安全停止",
+      "outcome": {
+        "code": "synthetic-sensor-dropout",
+        "validation_result": "rehearsal_assertion_failed",
+        "publishable": false,
+        "reason": "合成传感器中断已触发安全停止"
+      }
+    },
+    {
+      "id": "sim-6520fc2e-6f20-496b-8926-cfb923f89f9e",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 1,
+        "name": "加油机器人-001",
+        "model": "AGV-2000",
+        "chassis": "轮式底盘",
+        "actuator": "夹爪",
+        "working_range": "5m × 5m",
+        "weight": "120kg",
+        "loading": "50kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/1/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/1/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/1/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 1,
+          "code_module_id": 1,
+          "name": "SLAM导航算法",
+          "module": "感知与定位",
+          "version": "2.1.0",
+          "image": "harbor.local/robot/platform-smoke:20260726-193643",
+          "command": "ros2 launch robot_slam simulation.launch.py",
+          "runtime": "ROS 2 Humble",
+          "inputs": [
+            "/scan",
+            "/imu"
+          ],
+          "outputs": [
+            "/map",
+            "/tf",
+            "/odom"
+          ],
+          "description": "在仿真环境中完成实时定位和地图构建",
+          "status": "ready",
+          "color": "#3b82f6",
+          "image_digest": "sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+          "image_status": "built",
+          "updated_at": "2026-07-26T11:36:52.174Z"
+        },
+        {
+          "id": 2,
+          "code_module_id": 2,
+          "name": "视觉识别算法",
+          "module": "机器视觉",
+          "version": "1.8.3",
+          "image": "harbor.local/robot/vision:1.8.3",
+          "command": "python3 /workspace/detect.py --ros",
+          "runtime": "CUDA 12 / ROS 2",
+          "inputs": [
+            "/camera/color"
+          ],
+          "outputs": [
+            "/detections",
+            "/target_pose"
+          ],
+          "description": "识别工件、障碍物并输出目标位姿",
+          "status": "ready",
+          "color": "#8b5cf6"
+        }
+      ],
+      "scene": "warehouse",
+      "scenario": {
+        "id": "warehouse",
+        "version": "1.1.0",
+        "seed": 20260724,
+        "fault_mode": "none"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "仿真实验室工作流",
+        "scene": {
+          "id": "warehouse",
+          "version": "1.1.0"
+        },
+        "robot": {
+          "id": 1,
+          "name": "加油机器人-001",
+          "model": "AGV-2000",
+          "kind": "mobile_base",
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 1,
+            "catalog_key": null,
+            "name": "SLAM导航算法",
+            "version": "2.1.0",
+            "verified_commit": null,
+            "image": "harbor.local/robot/platform-smoke:20260726-193643",
+            "image_status": "built"
+          },
+          {
+            "order": 1,
+            "id": 2,
+            "catalog_key": null,
+            "name": "视觉识别算法",
+            "version": "1.8.3",
+            "verified_commit": null,
+            "image": "harbor.local/robot/vision:1.8.3",
+            "image_status": "local"
+          }
+        ],
+        "seed": 20260724,
+        "fault_mode": "none",
+        "sha256": "8b2832fa514e8a36a82925cc9acbb129a49cd7cd449e31dd8268b4def1add7e0"
+      },
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 100,
+        "scene": "warehouse",
+        "scene_version": "1.1.0",
+        "scene_label": "仓储移动机器人",
+        "robot_profile": {
+          "kind": "mobile_base",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "imu",
+            "lidar",
+            "localization",
+            "navigation",
+            "odometry"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [],
+        "steps": [
+          {
+            "id": 1,
+            "version": "2.1.0",
+            "name": "SLAM导航算法",
+            "inputs": [
+              "/scan",
+              "/imu"
+            ],
+            "outputs": [
+              "/map",
+              "/tf",
+              "/odom"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "local-demo"
+          },
+          {
+            "id": 2,
+            "version": "1.8.3",
+            "name": "视觉识别算法",
+            "inputs": [
+              "/camera/color"
+            ],
+            "outputs": [
+              "/detections",
+              "/target_pose"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "local-demo"
+          }
+        ],
+        "available_topics": {
+          "/scan": "sensor_msgs/msg/LaserScan",
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/imu": "sensor_msgs/msg/Imu",
+          "/imu/data": "sensor_msgs/msg/Imu",
+          "/odom": "nav_msgs/msg/Odometry",
+          "/odometry/raw": "nav_msgs/msg/Odometry",
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/goal_pose": "geometry_msgs/msg/PoseStamped",
+          "/map": "untyped",
+          "/detections": "untyped",
+          "/target_pose": "untyped"
+        }
+      },
+      "container_states": [
+        {
+          "id": 1,
+          "name": "SLAM导航算法",
+          "status": "completed"
+        },
+        {
+          "id": 2,
+          "name": "视觉识别算法",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-27T09:05:56.150Z",
+      "updated_at": "2026-07-27T09:06:08.529Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 12000,
+      "elapsed_ms": 12000,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-27T09:05:56.151Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 100",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-27T09:05:56.151Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-6520fc2e-6f20-496b-8926-cfb923f89f9e",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-27T09:05:56.151Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "8b2832fa514e8a36a82925cc9acbb129a49cd7cd449e31dd8268b4def1add7e0",
+            "seed": 20260724,
+            "fault_mode": "none"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-27T09:05:58.780Z",
+          "type": "perception",
+          "message": "合成传感器数据流已建立",
+          "payload": {
+            "progress": 20,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-27T09:06:02.029Z",
+          "type": "planning",
+          "message": "合成路径事件已生成（非真实规划证据）",
+          "payload": {
+            "progress": 45,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-27T09:06:04.626Z",
+          "type": "control",
+          "message": "合成轨迹控制事件正在推进",
+          "payload": {
+            "progress": 70,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 7,
+          "timestamp": "2026-07-27T09:06:08.530Z",
+          "type": "result",
+          "message": "编排演练完成；未执行物理仿真验收",
+          "payload": {
+            "progress": 100,
+            "evidence_level": "synthetic"
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.97,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:08.529Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:08.529Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:08.529Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:08.529Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 12,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:08.529Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 8,
+        "y": 1.6,
+        "heading": -0.23,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-27T09:06:08.529Z"
+      },
+      "finished_at": "2026-07-27T09:06:08.529Z",
+      "outcome": {
+        "code": "orchestration-rehearsal-completed",
+        "validation_result": "not_evaluated",
+        "publishable": false,
+        "reason": "该运行只产生合成数字孪生事件，未连接 ROS 2/Gazebo 执行器"
+      }
+    },
+    {
+      "id": "sim-2a169ccd-5e37-4808-9a39-01f87163e9be",
+      "workflow_name": "仿真实验室工作流",
+      "robot": {
+        "id": 3,
+        "name": "装配机器人-003",
+        "model": "ARM-6000",
+        "chassis": "固定底座",
+        "actuator": "精密夹具",
+        "working_range": "2m × 2m",
+        "weight": "200kg",
+        "loading": "25kg",
+        "battery": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/battery"
+        },
+        "speed": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/speed"
+        },
+        "position_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/position"
+        },
+        "vision": {
+          "head": {
+            "url": "local://camera",
+            "m3u8": "/camera/3/head"
+          },
+          "left_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/3/left"
+          },
+          "right_hand": {
+            "url": "local://camera",
+            "m3u8": "/camera/3/right"
+          },
+          "obstacle": {
+            "url": "local://telemetry",
+            "topic": "/robot/3/obstacle"
+          }
+        },
+        "end_effector_force_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/force"
+        },
+        "joint_angles_topic": {
+          "url": "local://telemetry",
+          "topic": "/robot/3/joints"
+        }
+      },
+      "algorithms": [
+        {
+          "id": 104,
+          "code_module_id": 104,
+          "catalog_key": "moveit2",
+          "name": "MoveIt 2 机械臂规划",
+          "module": "运动规划与控制",
+          "version": "main@f737f20",
+          "repository_url": "https://github.com/moveit/moveit2",
+          "branch": "main",
+          "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+          "license": "BSD-3-Clause",
+          "image": "catalog.local/ros2/moveit2:f737f20",
+          "image_status": "build-required",
+          "command": "ros2 launch moveit_resources_panda_moveit_config demo.launch.py",
+          "runtime": "MoveIt 2 / ROS 2",
+          "inputs": [
+            "/joint_states",
+            "/planning_scene",
+            "/motion_plan_request"
+          ],
+          "outputs": [
+            "/joint_trajectory",
+            "/display_planned_path"
+          ],
+          "input_types": {
+            "/joint_states": "sensor_msgs/msg/JointState",
+            "/planning_scene": "moveit_msgs/msg/PlanningScene",
+            "/motion_plan_request": "moveit_msgs/msg/MotionPlanRequest"
+          },
+          "output_types": {
+            "/joint_trajectory": "trajectory_msgs/msg/JointTrajectory",
+            "/display_planned_path": "moveit_msgs/msg/DisplayTrajectory"
+          },
+          "description": "ROS 2 机械臂运动规划框架，提供碰撞检测、运动学、轨迹规划和执行接口。",
+          "status": "verified-source",
+          "execution_adapter": "browser-digital-twin",
+          "color": "#f59e0b",
+          "verified_at": "2026-07-24T10:20:00.000Z"
+        }
+      ],
+      "scene": "manipulation-cell",
+      "scenario": {
+        "id": "manipulation-cell",
+        "version": "1.0.0",
+        "seed": 20260724,
+        "fault_mode": "none"
+      },
+      "run_manifest": {
+        "schema_version": "1.0",
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "workflow_name": "仿真实验室工作流",
+        "scene": {
+          "id": "manipulation-cell",
+          "version": "1.0.0"
+        },
+        "robot": {
+          "id": 3,
+          "name": "装配机器人-003",
+          "model": "ARM-6000",
+          "kind": "manipulator",
+          "capabilities": [
+            "camera",
+            "joint_state",
+            "manipulation"
+          ]
+        },
+        "algorithms": [
+          {
+            "order": 0,
+            "id": 104,
+            "catalog_key": "moveit2",
+            "name": "MoveIt 2 机械臂规划",
+            "version": "main@f737f20",
+            "verified_commit": "f737f202666802e13390081778e4fea25b8bc552",
+            "image": "catalog.local/ros2/moveit2:f737f20",
+            "image_status": "build-required"
+          }
+        ],
+        "seed": 20260724,
+        "fault_mode": "none",
+        "sha256": "bf48723862616609ff09cf21d1b5b2ee05ed4271ca68eff0c9520cf569f30240"
+      },
+      "status": "completed",
+      "progress": 100,
+      "execution_mode": "browser-orchestration-rehearsal",
+      "provider": {
+        "id": "browser-orchestration-rehearsal",
+        "label": "服务端确定性编排演练",
+        "evidence_level": "synthetic",
+        "capabilities": [
+          "start",
+          "pause",
+          "resume",
+          "cancel",
+          "events"
+        ]
+      },
+      "compatibility": {
+        "runnable": true,
+        "score": 97,
+        "scene": "manipulation-cell",
+        "scene_version": "1.0.0",
+        "scene_label": "机械臂操作单元",
+        "robot_profile": {
+          "kind": "manipulator",
+          "robot_count": 1,
+          "capabilities": [
+            "camera",
+            "joint_state",
+            "manipulation"
+          ]
+        },
+        "execution_mode": "browser-orchestration-rehearsal",
+        "evidence_level": "synthetic",
+        "errors": [],
+        "warnings": [
+          "MoveIt 2 机械臂规划 仅在合成编排演练中展示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查"
+        ],
+        "steps": [
+          {
+            "id": 104,
+            "version": "main@f737f20",
+            "name": "MoveIt 2 机械臂规划",
+            "inputs": [
+              "/joint_states",
+              "/planning_scene",
+              "/motion_plan_request"
+            ],
+            "outputs": [
+              "/joint_trajectory",
+              "/display_planned_path"
+            ],
+            "missing_inputs": [],
+            "type_mismatches": [],
+            "robot_compatible": true,
+            "adapter": "browser-digital-twin"
+          }
+        ],
+        "available_topics": {
+          "/tf": "tf2_msgs/msg/TFMessage",
+          "/joint_states": "sensor_msgs/msg/JointState",
+          "/planning_scene": "moveit_msgs/msg/PlanningScene",
+          "/motion_plan_request": "moveit_msgs/msg/MotionPlanRequest",
+          "/camera/image_raw": "sensor_msgs/msg/Image",
+          "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+          "/joint_trajectory": "trajectory_msgs/msg/JointTrajectory",
+          "/display_planned_path": "moveit_msgs/msg/DisplayTrajectory"
+        }
+      },
+      "container_states": [
+        {
+          "id": 104,
+          "name": "MoveIt 2 机械臂规划",
+          "status": "completed"
+        }
+      ],
+      "started_at": "2026-07-27T09:06:33.064Z",
+      "updated_at": "2026-07-27T09:06:45.437Z",
+      "last_resumed_at": null,
+      "duration_ms": 12000,
+      "accumulated_ms": 12000,
+      "elapsed_ms": 12000,
+      "revision": 2,
+      "events": [
+        {
+          "seq": 1,
+          "timestamp": "2026-07-27T09:06:33.064Z",
+          "type": "preflight",
+          "message": "严格接口预检通过，兼容性评分 97",
+          "payload": {}
+        },
+        {
+          "seq": 2,
+          "timestamp": "2026-07-27T09:06:33.064Z",
+          "type": "run",
+          "message": "已创建服务端权威运行 sim-2a169ccd-5e37-4808-9a39-01f87163e9be",
+          "payload": {}
+        },
+        {
+          "seq": 3,
+          "timestamp": "2026-07-27T09:06:33.064Z",
+          "type": "evidence",
+          "message": "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
+          "payload": {
+            "manifest_sha256": "bf48723862616609ff09cf21d1b5b2ee05ed4271ca68eff0c9520cf569f30240",
+            "seed": 20260724,
+            "fault_mode": "none"
+          }
+        },
+        {
+          "seq": 4,
+          "timestamp": "2026-07-27T09:06:35.688Z",
+          "type": "perception",
+          "message": "合成传感器数据流已建立",
+          "payload": {
+            "progress": 20,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 5,
+          "timestamp": "2026-07-27T09:06:38.936Z",
+          "type": "planning",
+          "message": "合成路径事件已生成（非真实规划证据）",
+          "payload": {
+            "progress": 45,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 6,
+          "timestamp": "2026-07-27T09:06:41.537Z",
+          "type": "control",
+          "message": "合成轨迹控制事件正在推进",
+          "payload": {
+            "progress": 70,
+            "evidence_level": "synthetic"
+          }
+        },
+        {
+          "seq": 7,
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "type": "result",
+          "message": "编排演练完成；未执行物理仿真验收",
+          "payload": {
+            "progress": 100,
+            "evidence_level": "synthetic"
+          }
+        }
+      ],
+      "metrics": {
+        "rehearsal_rate": {
+          "value": 0.97,
+          "unit": "x",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "trustworthy": false
+        },
+        "collision_count": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "trustworthy": false
+        },
+        "cpu_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "trustworthy": false
+        },
+        "memory_usage": {
+          "value": null,
+          "unit": "not_measured",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "trustworthy": false
+        },
+        "sim_time": {
+          "value": 12,
+          "unit": "s",
+          "source": "synthetic-orchestration",
+          "timestamp": "2026-07-27T09:06:45.437Z",
+          "trustworthy": false
+        }
+      },
+      "pose": {
+        "x": 8,
+        "y": 1.6,
+        "heading": -0.23,
+        "source": "synthetic-orchestration",
+        "trustworthy": false,
+        "timestamp": "2026-07-27T09:06:45.437Z"
+      },
+      "finished_at": "2026-07-27T09:06:45.437Z",
+      "outcome": {
+        "code": "orchestration-rehearsal-completed",
+        "validation_result": "not_evaluated",
+        "publishable": false,
+        "reason": "该运行只产生合成数字孪生事件，未连接 ROS 2/Gazebo 执行器"
+      }
+    }
+  ],
+  "imageBuilds": [
+    {
+      "id": "build-0d9e3f36-f3cb-4037-99b4-16a06b5ab9c0",
+      "code_module_id": 1,
+      "code_module_name": "激光雷达 SLAM",
+      "repository_url": "ssh://git.local/robot/slam.git",
+      "source_ref": "main",
+      "dockerfile": "Dockerfile",
+      "base_image": "ros:humble-ros-base",
+      "target_image": "harbor.local/robot/platform-smoke:20260726-193643",
+      "description": "激光雷达 SLAM 镜像构建",
+      "resource_cpu": "2",
+      "resource_memory": "4G",
+      "provider": "local-compatible",
+      "evidence_level": "local-metadata-rehearsal",
+      "status": "succeeded",
+      "phase": "镜像元数据已登记",
+      "progress": 100,
+      "submitted_at": "2026-07-26T11:36:43.133Z",
+      "updated_at": "2026-07-26T11:36:52.173Z",
+      "logs": [
+        {
+          "timestamp": "2026-07-26T11:36:43.133Z",
+          "level": "info",
+          "message": "已锁定源码 ssh://git.local/robot/slam.git#main"
+        }
+      ],
+      "build_manifest": {
+        "schema_version": "robot-algorithm-image/v1",
+        "source": {
+          "repository_url": "ssh://git.local/robot/slam.git",
+          "ref": "main",
+          "verified_commit": null
+        },
+        "image": {
+          "base": "ros:humble-ros-base",
+          "target": "harbor.local/robot/platform-smoke:20260726-193643"
+        },
+        "build": {
+          "dockerfile": "Dockerfile",
+          "resource_cpu": "2",
+          "resource_memory": "4G"
+        },
+        "sha256": "dbd4aee2b5b5c53bb0e56778c25bcb529d60372520e7dca90ea2d1c8b8dc7974"
+      },
+      "finished_at": "2026-07-26T11:36:52.173Z",
+      "registry_image_id": "image-b8738e85-301d-4c5c-bbdd-90b888daf2fd"
+    }
+  ],
+  "registryImages": [
+    {
+      "id": "image-b8738e85-301d-4c5c-bbdd-90b888daf2fd",
+      "name": "激光雷达 SLAM",
+      "target_image": "harbor.local/robot/platform-smoke:20260726-193643",
+      "digest": "sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+      "immutable_ref": "harbor.local/robot/platform-smoke@sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+      "source_ref": "main",
+      "build_id": "build-0d9e3f36-f3cb-4037-99b4-16a06b5ab9c0",
+      "code_module_id": 1,
+      "provider": "local-compatible",
+      "evidence_level": "local-metadata-rehearsal",
+      "runtime_verified": false,
+      "status": "ready",
+      "created_at": "2026-07-26T11:36:52.174Z"
+    }
+  ],
+  "registryRepositories": [
+    {
+      "id": "repo-local-compatible",
+      "name": "本地镜像仓库配置",
+      "server": "harbor.local/robot/",
+      "hubsecret": "robot-registry",
+      "provider": "local-compatible",
+      "status": "metadata-only",
+      "created_at": "2026-07-24T00:00:00.000Z"
+    }
+  ],
+  "pipelineRuns": [
+    {
+      "id": "pipeline-run-f480b241-6782-4b30-92c0-e86ec51373e5",
+      "pipeline_id": 1,
+      "pipeline_name": "物料搬运任务A",
+      "images": [
+        {
+          "id": "image-b8738e85-301d-4c5c-bbdd-90b888daf2fd",
+          "name": "激光雷达 SLAM",
+          "target_image": "harbor.local/robot/platform-smoke:20260726-193643",
+          "digest": "sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+          "immutable_ref": "harbor.local/robot/platform-smoke@sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda",
+          "source_ref": "main",
+          "build_id": "build-0d9e3f36-f3cb-4037-99b4-16a06b5ab9c0",
+          "code_module_id": 1,
+          "provider": "local-compatible",
+          "evidence_level": "local-metadata-rehearsal",
+          "runtime_verified": false,
+          "status": "ready",
+          "created_at": "2026-07-26T11:36:52.174Z"
+        }
+      ],
+      "parameters": {
+        "smoke_test": true
+      },
+      "provider": "local-compatible",
+      "evidence_level": "local-orchestration-rehearsal",
+      "run_manifest": {
+        "schema_version": "robot-pipeline-run/v1",
+        "pipeline_id": 1,
+        "pipeline_name": "物料搬运任务A",
+        "image_digests": [
+          "sha256:9386203f54d5b032cad3674344e32f5cfa331c26986d50d0de431a269976deda"
+        ],
+        "parameters": {
+          "smoke_test": true
+        },
+        "sha256": "63978f2727d84d7e94eea428abe755e6ee94f0f61cebc551300587fefe554f59"
+      },
+      "status": "succeeded",
+      "phase": "Pipeline 完成",
+      "progress": 100,
+      "tasks": [
+        {
+          "name": "解析 Pipeline DAG",
+          "status": "succeeded"
+        },
+        {
+          "name": "校验镜像与算法契约",
+          "status": "succeeded"
+        },
+        {
+          "name": "拉取容器镜像",
+          "status": "succeeded"
+        },
+        {
+          "name": "执行算法任务",
+          "status": "succeeded"
+        },
+        {
+          "name": "归档 MinIO 产物",
+          "status": "succeeded"
+        }
+      ],
+      "submitted_at": "2026-07-26T11:36:52.240Z",
+      "started_at": "2026-07-26T11:36:52.240Z",
+      "updated_at": "2026-07-26T11:37:07.275Z",
+      "duration_ms": 14000,
+      "remote_status": null,
+      "remote_location": null,
+      "artifact_pending": false,
+      "artifact_id": "artifact-9d02060e-c647-4973-a163-5557d84d52b5",
+      "finished_at": "2026-07-26T11:37:07.275Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact-9d02060e-c647-4973-a163-5557d84d52b5",
+      "run_id": "pipeline-run-f480b241-6782-4b30-92c0-e86ec51373e5",
+      "name": "物料搬运任务A-result.json",
+      "content_type": "application/json",
+      "storage": {
+        "provider": "minio",
+        "bucket": "mlpipeline",
+        "object_key": "pipeline-runs/pipeline-run-f480b241-6782-4b30-92c0-e86ec51373e5/result.json",
+        "size": 929,
+        "etag": "76cdea79dc1777e8f0691303f0d4112e"
+      },
+      "created_at": "2026-07-26T11:37:07.275Z"
+    }
+  ]
+}
