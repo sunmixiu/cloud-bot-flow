@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -6,31 +6,42 @@ import {
   Box,
   CheckCircle2,
   ChevronRight,
-  CircleStop,
   Container,
-  Cpu,
+  Download,
   ExternalLink,
   Gauge,
   GripVertical,
+  History,
   MonitorPlay,
-  Pause,
+  PackageSearch,
   Play,
   RotateCcw,
+  Search,
+  ShieldCheck,
+  StopCircle,
+  Store,
   Terminal,
   Trash2,
+  Workflow,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { PhysicsKeyframe } from "@/components/simulation/PhysicsSimulationViewport";
 import { useToast } from "@/hooks/use-toast";
-import { resourceApi, simulationAlgorithmApi, simulationApi } from "@/services/api";
+import { platformApi, resourceApi, simulationAlgorithmApi, simulationApi } from "@/services/api";
 import "./SimulationLab.css";
+
+const PhysicsSimulationViewport = lazy(() => import("@/components/simulation/PhysicsSimulationViewport"));
 
 interface SimulationAlgorithm {
   id: string | number;
+  catalog_key?: string;
   name: string;
   module: string;
   version: string;
@@ -47,6 +58,7 @@ interface SimulationAlgorithm {
   verified_commit?: string;
   image_status?: string;
   execution_adapter?: string;
+  workflow_manifest?: string;
 }
 
 interface Robot {
@@ -57,6 +69,7 @@ interface Robot {
 
 interface SimulationWorkflow {
   name?: string;
+  pipelineId?: string | number;
   algorithms?: Array<{
     id?: string | number;
     assetId?: string | number;
@@ -64,7 +77,7 @@ interface SimulationWorkflow {
     displayName?: string;
   } | string>;
   robots?: Array<{ id?: string | number; name: string }>;
-  monitoringData?: any;
+  monitoringData?: unknown;
 }
 
 interface SimulationScenario {
@@ -77,6 +90,7 @@ type SimulationStatus =
   | "idle"
   | "validating"
   | "running"
+  | "canceling"
   | "paused"
   | "completed"
   | "failed"
@@ -111,10 +125,18 @@ interface SimulationRun {
   status: Exclude<SimulationStatus, "idle" | "validating" | "failed"> | "failed";
   progress: number;
   revision: number;
+  workflow_name?: string;
+  pipeline_id?: string | number;
+  started_at?: string;
+  finished_at?: string;
+  execution_mode?: string;
+  artifact_id?: string | number;
+  last_sync_error?: string;
+  remote_workflow?: { name?: string; namespace?: string };
   robot?: Robot;
   algorithms?: SimulationAlgorithm[];
   scene?: string;
-  provider?: { id: string; label: string; evidence_level: string };
+  provider?: { id: string; label: string; evidence_level: string; capabilities?: string[] };
   scenario?: { id: string; version: string; seed: number; fault_mode?: string };
   run_manifest?: { sha256: string };
   metrics?: Record<string, MetricValue>;
@@ -133,12 +155,63 @@ interface SimulationRun {
     publishable: boolean;
     reason?: string;
   };
+  evidence?: {
+    kind?: "barcode-recognition" | "physics-simulation" | "retail-digital-twin";
+    artifact_key: string;
+    expected_barcode?: string;
+    detected_barcode?: string;
+    barcode_format?: string;
+    input_sha256?: string;
+    upstream_commit?: string;
+    elapsed_ms?: number;
+    found?: number;
+    engine?: { name?: string; version?: string; time_step_seconds?: number };
+    algorithm?: { name?: string; source?: string; commit?: string };
+    assertions?: Record<string, boolean>;
+    metrics?: {
+      simulation_steps?: number;
+      simulated_seconds?: number;
+      real_time_factor?: number;
+      final_position_error_m?: number;
+      object_transfer_distance_m?: number;
+      safety_contact_steps?: number;
+    };
+    playback?: { keyframe_count?: number; keyframes?: PhysicsKeyframe[] };
+    rendered_frames?: { count?: number; renderer?: string };
+    validation_profile?: string;
+    full_stack_ready?: boolean;
+    input?: { source?: string; point_count?: number; sha256?: string };
+    scene?: {
+      name?: string;
+      mesh?: { format?: string; voxel_count?: number; vertices?: number; faces?: number };
+    };
+    perception?: { detection_count?: number };
+    task?: {
+      planner?: string;
+      graph?: Array<{ id: string; layer: string; executor: string; status: string; reason?: string }>;
+    };
+    navigation?: {
+      planner?: string;
+      path_points?: number;
+      path_length_m?: number;
+      waypoints?: number[][];
+    };
+    manipulation?: {
+      method?: string;
+      reachable?: boolean;
+      vla?: { status?: string; required?: string[] };
+    };
+    blockers?: string[];
+    mesh_asset?: { path?: string; format?: string };
+    preview_asset?: { path?: string; format?: string };
+    integrity?: { algorithm?: string; verified?: boolean };
+  };
 }
 
 const initialLogs = [
-  "[system] 编排演练服务已就绪",
-  "[provider] 等待加入算法规格",
-  "[scene] warehouse 场景规格加载完成",
+  "[system] 生产运行网关已就绪",
+  "[provider] 只接受不可变 OCI 镜像与真实 Argo Workflow",
+  "[scene] 等待选择运行场景",
 ];
 
 const containerPhaseLabel: Record<string, string> = {
@@ -146,9 +219,11 @@ const containerPhaseLabel: Record<string, string> = {
   pulling: "装载适配器",
   starting: "启动中",
   running: "运行中",
+  canceling: "正在停止",
   paused: "已暂停",
   completed: "已完成",
   failed: "失败",
+  canceled: "已终止",
 };
 
 const getContainerPhase = (
@@ -157,6 +232,7 @@ const getContainerPhase = (
   index: number,
 ) => {
   if (simulationStatus === "failed") return "failed";
+  if (simulationStatus === "canceling") return "canceling";
   if (simulationStatus === "completed") return "completed";
   if (simulationStatus === "paused") return "paused";
   if (simulationStatus === "idle" || simulationStatus === "validating") return "queued";
@@ -164,6 +240,15 @@ const getContainerPhase = (
   if (progress < 10 + offset) return "pulling";
   if (progress < 24 + offset) return "starting";
   return "running";
+};
+
+const readableWorkflowName = (run: SimulationRun) => {
+  const name = String(run.workflow_name || "").trim();
+  const replacementCount = (name.match(/[?\uFFFD]/g) || []).length;
+  const isReadable = name.length > 0 && replacementCount / name.length < 0.35;
+  return isReadable
+    ? name
+    : run.remote_workflow?.name || run.id;
 };
 
 export default function SimulationLab() {
@@ -186,9 +271,16 @@ export default function SimulationLab() {
   const [runId, setRunId] = useState<string | null>(null);
   const [runSnapshot, setRunSnapshot] = useState<SimulationRun | null>(null);
   const [compatibility, setCompatibility] = useState<CompatibilityReport | null>(null);
+  const [assetQuery, setAssetQuery] = useState("");
+  const [assetFilter, setAssetFilter] = useState<"all" | "retail" | "actual">("actual");
+  const [startError, setStartError] = useState<string | null>(null);
+  const [downloadingEvidence, setDownloadingEvidence] = useState(false);
+  const [runHistory, setRunHistory] = useState<SimulationRun[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const workflow = useMemo<SimulationWorkflow>(() => {
-    const stateWorkflow = (location.state as any)?.simulationData;
+    const stateWorkflow = (location.state as { simulationData?: SimulationWorkflow } | null)?.simulationData;
     if (stateWorkflow) return stateWorkflow;
     try {
       return JSON.parse(sessionStorage.getItem("simulationWorkflow") || "{}");
@@ -223,6 +315,16 @@ export default function SimulationLab() {
           .filter((id): id is string | number => id !== undefined);
         setSelectedAlgorithmIds(matchedIds);
 
+        const importsRetailTask = loadedAlgorithms.some(
+          (algorithm: SimulationAlgorithm) =>
+            matchedIds.some((id) => String(id) === String(algorithm.id)) &&
+            (algorithm.module.includes("便利店") ||
+              algorithm.name.includes("便利店") ||
+              algorithm.name.includes("条码") ||
+              String(algorithm.catalog_key || "").includes("retail")),
+        );
+        if (importsRetailTask) setSelectedScene("retail-store");
+
         const incomingRobot = workflow.robots?.[0];
         const matchedRobot = (robotResponse || []).find(
           (robot: Robot) =>
@@ -230,6 +332,16 @@ export default function SimulationLab() {
             robot.name === incomingRobot?.name,
         );
         setSelectedRobotId(String(matchedRobot?.id || robotResponse?.[0]?.id || ""));
+        const importsManipulatorTask = loadedAlgorithms.some(
+          (algorithm: SimulationAlgorithm) =>
+            matchedIds.some((id) => String(id) === String(algorithm.id)) &&
+            (algorithm.catalog_key === "bullet-panda-pick-place" ||
+              algorithm.module.includes("机械臂") ||
+              algorithm.module.includes("操作")),
+        );
+        if (matchedRobot?.model?.toUpperCase().includes("ARM") || importsManipulatorTask) {
+          setSelectedScene("manipulation-cell");
+        }
 
         if (matchedIds.length > 0) {
           setLogs((prev) => [
@@ -285,20 +397,18 @@ export default function SimulationLab() {
         setRunSnapshot(run);
         setProgress(run.progress);
         setStatus(run.status);
-        if (!terminal) {
-          if (run.robot?.id) setSelectedRobotId(String(run.robot.id));
-          if (run.algorithms?.length) {
-            setSelectedAlgorithmIds(run.algorithms.map((algorithm) => algorithm.id));
-          }
-          if (run.scene) setSelectedScene(run.scene);
-          if (run.scenario?.seed !== undefined) setSeed(run.scenario.seed);
-          if (
-            run.scenario?.fault_mode === "none" ||
-            run.scenario?.fault_mode === "sensor-dropout" ||
-            run.scenario?.fault_mode === "algorithm-timeout"
-          ) {
-            setFaultMode(run.scenario.fault_mode);
-          }
+        if (run.robot?.id) setSelectedRobotId(String(run.robot.id));
+        if (run.algorithms?.length) {
+          setSelectedAlgorithmIds(run.algorithms.map((algorithm) => algorithm.id));
+        }
+        if (run.scene) setSelectedScene(run.scene);
+        if (run.scenario?.seed !== undefined) setSeed(run.scenario.seed);
+        if (
+          run.scenario?.fault_mode === "none" ||
+          run.scenario?.fault_mode === "sensor-dropout" ||
+          run.scenario?.fault_mode === "algorithm-timeout"
+        ) {
+          setFaultMode(run.scenario.fault_mode);
         }
         const eventLogs = (run.events || []).map((event) => `[${event.type}] ${event.message}`);
         setLogs((current) => [
@@ -322,11 +432,113 @@ export default function SimulationLab() {
     };
   }, [runId]);
 
-  const compositionLocked = ["validating", "running", "paused"].includes(status);
+  const loadRunHistory = useCallback(async () => {
+    try {
+      setHistoryLoading(true);
+      const response = await simulationApi.getRuns(20);
+      setRunHistory((response.result?.data || []) as SimulationRun[]);
+    } catch (error) {
+      console.error("Load production run history failed:", error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRunHistory();
+  }, [loadRunHistory]);
+
+  useEffect(() => {
+    if (["completed", "failed", "canceled", "interrupted"].includes(status)) {
+      void loadRunHistory();
+    }
+  }, [loadRunHistory, status]);
+
+  const compositionLocked = ["validating", "running", "canceling", "paused"].includes(status);
+  const isProductionAsset = (algorithm: SimulationAlgorithm) =>
+    algorithm.execution_adapter === "cube-studio-argo-workflow" &&
+    algorithm.image_status !== "build-required" &&
+    algorithm.image.includes("@sha256:") &&
+    Boolean(algorithm.workflow_manifest);
+  const usesRealPipeline = Boolean(
+    workflow.pipelineId &&
+    selectedAlgorithms.length > 0 &&
+    selectedAlgorithms.every(isProductionAsset),
+  );
+  const workflowBoundAlgorithmIds = useMemo(() =>
+    (workflow.algorithms || [])
+      .map((incoming) => {
+        const assetId = typeof incoming === "string" ? null : incoming.assetId;
+        const name = typeof incoming === "string" ? incoming : incoming.name;
+        return algorithms.find((algorithm) =>
+          assetId !== null && assetId !== undefined
+            ? String(algorithm.id) === String(assetId)
+            : algorithm.name === name,
+        )?.id;
+      })
+      .filter((id): id is string | number => id !== undefined),
+  [algorithms, workflow.algorithms]);
+  const filteredAlgorithms = useMemo(() => {
+    const query = assetQuery.trim().toLowerCase();
+    return algorithms.filter((algorithm) => {
+      const matchesQuery = !query || [
+        algorithm.name,
+        algorithm.module,
+        algorithm.runtime,
+        algorithm.image,
+      ].some((value) => String(value || "").toLowerCase().includes(query));
+      const matchesFilter = assetFilter === "all"
+        || (assetFilter === "retail" && (
+          algorithm.module.includes("便利店") ||
+          algorithm.name.includes("便利店") ||
+          algorithm.name.includes("条码") ||
+          String(algorithm.catalog_key || "").includes("retail")
+        ))
+        || (assetFilter === "actual" && algorithm.execution_adapter === "cube-studio-argo-workflow");
+      return matchesQuery && matchesFilter;
+    });
+  }, [algorithms, assetFilter, assetQuery]);
+  const isActualRun =
+    runSnapshot?.execution_mode === "cube-studio-argo" ||
+    compatibility?.execution_mode === "cube-studio-argo" ||
+    usesRealPipeline;
+
+  const clearFinishedRun = () => {
+    setCompatibility(null);
+    setStartError(null);
+    if (["completed", "failed", "canceled", "interrupted"].includes(status)) {
+      sessionStorage.removeItem("activeSimulationRunId");
+      setStatus("idle");
+      setProgress(0);
+      setRunId(null);
+      setRunSnapshot(null);
+      setLogs(initialLogs);
+    }
+  };
 
   const addAlgorithm = (id: string | number) => {
     if (compositionLocked) return;
-    setCompatibility(null);
+    const algorithm = algorithms.find((item) => String(item.id) === String(id));
+    if (!algorithm || !isProductionAsset(algorithm)) {
+      toast({
+        title: "资产尚不可运行",
+        description: "该源码案例尚未形成带摘要的 OCI 镜像和受控 Argo Workflow，请先在镜像与 Pipeline 页面完成构建。",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      workflow.pipelineId &&
+      !workflowBoundAlgorithmIds.some((boundId) => String(boundId) === String(id))
+    ) {
+      toast({
+        title: "算法不属于当前 Pipeline",
+        description: "请回到工作流画布修改 Pipeline 绑定，实验室不会在运行前临时替换生产算法。",
+        variant: "destructive",
+      });
+      return;
+    }
+    clearFinishedRun();
     setSelectedAlgorithmIds((prev) => {
       if (prev.some((item) => String(item) === String(id))) return prev;
       return [...prev, id];
@@ -346,8 +558,72 @@ export default function SimulationLab() {
 
   const removeAlgorithm = (id: string | number) => {
     if (compositionLocked) return;
-    setCompatibility(null);
+    clearFinishedRun();
     setSelectedAlgorithmIds((prev) => prev.filter((item) => String(item) !== String(id)));
+  };
+
+  const applyRetailTemplate = () => {
+    if (compositionLocked) return;
+    clearFinishedRun();
+    const templateIds = algorithms
+      .filter((algorithm) =>
+        isProductionAsset(algorithm) &&
+        workflowBoundAlgorithmIds.some((id) => String(id) === String(algorithm.id)) &&
+        (
+          algorithm.name.includes("条码") ||
+          algorithm.name.includes("便利店") ||
+          String(algorithm.catalog_key || "").includes("barcode") ||
+          String(algorithm.catalog_key || "").includes("retail-digital-twin")
+        ),
+      )
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map((algorithm) => algorithm.id);
+    setSelectedAlgorithmIds(templateIds);
+    setSelectedScene("retail-store");
+    setFaultMode("none");
+    setLogs((previous) => [
+      ...previous,
+      `[template] 已装载当前 Pipeline 绑定的便利店真实算法资产`,
+    ]);
+  };
+
+  const canApplyRetailTemplate = Boolean(
+    workflow.pipelineId && algorithms.some((algorithm) =>
+      workflowBoundAlgorithmIds.some((id) => String(id) === String(algorithm.id)) &&
+      (algorithm.name.includes("条码") ||
+        algorithm.name.includes("便利店") ||
+        String(algorithm.catalog_key || "").includes("barcode") ||
+        String(algorithm.catalog_key || "").includes("retail-digital-twin")),
+    ),
+  );
+
+  const validateConfiguration = async () => {
+    if (!usesRealPipeline || !selectedRobot) return;
+    try {
+      setStartError(null);
+      setStatus("validating");
+      const response = await simulationApi.preflight({
+        algorithms: selectedAlgorithms,
+        scene: selectedScene,
+        robot: selectedRobot,
+        pipeline_id: workflow.pipelineId,
+      });
+      const report = response.result as CompatibilityReport;
+      setCompatibility(report);
+      setStatus(report.runnable ? "idle" : "failed");
+      toast({
+        title: report.runnable ? "运行前检查通过" : "运行前检查未通过",
+        description: report.runnable
+          ? `兼容性评分 ${report.score}，镜像摘要、接口与场景均可提交`
+          : report.errors[0] || "存在阻断问题",
+        variant: report.runnable ? "default" : "destructive",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setStartError(message);
+      setStatus("failed");
+      toast({ title: "运行前检查失败", description: message, variant: "destructive" });
+    }
   };
 
   const startSimulation = async () => {
@@ -359,8 +635,17 @@ export default function SimulationLab() {
       });
       return;
     }
+    if (!workflow.pipelineId || !selectedAlgorithms.every(isProductionAsset)) {
+      toast({
+        title: "不能提交生产运行",
+        description: "请从工作流画布进入，并只选择已绑定真实 Pipeline 的不可变镜像资产。",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      setStartError(null);
       setStatus("validating");
       setLogs((prev) => [
         ...prev,
@@ -370,6 +655,7 @@ export default function SimulationLab() {
         algorithms: selectedAlgorithms,
         scene: selectedScene,
         robot: selectedRobot,
+        pipeline_id: workflow.pipelineId,
       });
       const report = preflightResponse.result as CompatibilityReport;
       setCompatibility(report);
@@ -389,6 +675,7 @@ export default function SimulationLab() {
 
       const response = await simulationApi.run({
         workflow_name: workflow.name || "仿真实验室工作流",
+        pipeline_id: workflow.pipelineId,
         robot: selectedRobot,
         algorithms: selectedAlgorithms,
         scene: selectedScene,
@@ -398,133 +685,195 @@ export default function SimulationLab() {
       setRunId(response.result.id);
       setRunSnapshot(response.result as SimulationRun);
       sessionStorage.setItem("activeSimulationRunId", response.result.id);
-      setProgress(0);
-      setStatus("running");
+      setProgress(response.result.progress || 0);
+      setStatus(response.result.status);
       setLogs([
         `[preflight] 接口预检通过，${report.warnings.length} 条部署提示`,
-        `[run] 创建仿真实例 ${response.result.id}`,
+        `[run] 已提交真实 Cube Studio / Argo Workflow ${response.result.remote_workflow?.name}`,
         `[robot] 加载机器人 ${selectedRobot.name} (${selectedRobot.model})`,
         `[manifest] seed=${seed} · fault=${faultMode} · sha256=${String(response.result.run_manifest?.sha256 || "").slice(0, 12)}`,
-        ...selectedAlgorithms.map((algorithm) =>
-          algorithm.image_status === "build-required"
-            ? `[adapter] 加载 ${algorithm.name} 编排演练适配器（真实镜像待 CI 构建）`
-            : `[rehearsal] 装载 ${algorithm.image} 规格`,
-        ),
-        "[clock] 合成演练时钟开始运行",
+        ...selectedAlgorithms.map((algorithm) => `[container] 提交不可变镜像 ${algorithm.image}`),
+        "[evidence] 等待容器断言、SHA-256 校验与 MinIO 归档证据",
       ]);
       toast({
-        title: "编排演练已启动",
-        description: `${selectedAlgorithms.length} 个算法规格正在演练`,
+        title: "真实 Pipeline 已提交",
+        description: `Argo Workflow ${response.result.remote_workflow?.name} 正在运行`,
       });
     } catch (error) {
       console.error("Start simulation failed:", error);
       setStatus("failed");
+      setProgress(0);
+      setRunId(null);
+      setRunSnapshot(null);
+      sessionStorage.removeItem("activeSimulationRunId");
+      const message = error instanceof Error ? error.message : "仿真运行接口返回错误";
+      setStartError(message);
       toast({
         title: "启动失败",
-        description: error instanceof Error ? error.message : "仿真运行接口返回错误",
+        description: message,
         variant: "destructive",
       });
     }
   };
 
-  const pauseSimulation = async () => {
+  const cancelSimulation = async () => {
     if (!runId || !runSnapshot) return;
     try {
       const response = await simulationApi.controlRun(
         runId,
-        "pause",
+        "cancel",
         runSnapshot.revision,
       );
       setRunSnapshot(response.result as SimulationRun);
       setStatus(response.result.status);
       setProgress(response.result.progress);
+      toast({ title: "Workflow 已终止", description: "Kubernetes 已级联停止容器节点，本次运行不会生成可发布证据" });
     } catch (error) {
-      toast({ title: "暂停失败", description: String(error), variant: "destructive" });
+      toast({ title: "停止失败", description: String(error), variant: "destructive" });
     }
   };
 
-  const resumeSimulation = async () => {
-    if (!runId || !runSnapshot) return;
-    try {
-      const response = await simulationApi.controlRun(
-        runId,
-        "resume",
-        runSnapshot.revision,
-      );
-      setRunSnapshot(response.result as SimulationRun);
-      setStatus(response.result.status);
-      setProgress(response.result.progress);
-    } catch (error) {
-      toast({ title: "恢复失败", description: String(error), variant: "destructive" });
-    }
-  };
-
-  const resetSimulation = async () => {
-    if (runId && runSnapshot && ["running", "paused"].includes(status)) {
-      try {
-        await simulationApi.controlRun(runId, "cancel", runSnapshot.revision);
-      } catch (error) {
-        toast({
-          title: "取消失败",
-          description: error instanceof Error ? error.message : String(error),
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+  const resetSimulation = () => {
+    if (["running", "canceling", "validating"].includes(status)) return;
     sessionStorage.removeItem("activeSimulationRunId");
     setStatus("idle");
     setProgress(0);
     setRunId(null);
     setRunSnapshot(null);
     setCompatibility(null);
+    setStartError(null);
     setLogs(initialLogs);
   };
 
-  const metricValue = (name: string) => runSnapshot?.metrics?.[name]?.value ?? null;
-  const rehearsalRate = metricValue("rehearsal_rate");
-  const simTime = Number(metricValue("sim_time") || 0);
-  const poseX = Number(runSnapshot?.pose?.x || 0);
-  const poseY = Number(runSnapshot?.pose?.y || 0);
-  const robotLeft = Math.min(80, 8 + poseX * 9);
-  const robotTop = Math.max(25, Math.min(78, 60 - poseY * 9));
+  const restoreRun = async (historyRun: SimulationRun) => {
+    try {
+      const response = await simulationApi.getRun(historyRun.id);
+      const run = response.result as SimulationRun;
+      setRunId(run.id);
+      setRunSnapshot(run);
+      setStatus(run.status);
+      setProgress(run.progress);
+      setCompatibility(null);
+      setStartError(null);
+      if (run.robot?.id) setSelectedRobotId(String(run.robot.id));
+      if (run.algorithms?.length) setSelectedAlgorithmIds(run.algorithms.map((algorithm) => algorithm.id));
+      if (run.scene) setSelectedScene(run.scene);
+      setLogs((run.events || []).map((event) => `[${event.type}] ${event.message}`));
+      setHistoryOpen(false);
+    } catch (error) {
+      toast({
+        title: "运行记录加载失败",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadEvidence = async () => {
+    if (!runSnapshot?.artifact_id) return;
+    const filename = runSnapshot.evidence?.artifact_key?.split("/").pop() || `${runSnapshot.id}-evidence.tgz`;
+    try {
+      setDownloadingEvidence(true);
+      await platformApi.downloadArtifact(runSnapshot.artifact_id, filename);
+      toast({ title: "证据包已下载", description: filename });
+    } catch (error) {
+      toast({
+        title: "下载失败",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingEvidence(false);
+    }
+  };
+
+  const isPhysicsEvidence = runSnapshot?.evidence?.kind === "physics-simulation";
+  const isRetailEvidence = runSnapshot?.evidence?.kind === "retail-digital-twin";
+  const workflowStep = status === "completed"
+    ? 4
+    : status === "running" || status === "canceling" || status === "paused" || status === "validating" || compatibility?.runnable
+      ? 3
+      : selectedAlgorithms.length > 0 && selectedRobot
+        ? 2
+        : 1;
+  const workflowSteps = [
+    { id: 1, label: "选择算法", hint: `${selectedAlgorithms.length} 个资产` },
+    { id: 2, label: "配置环境", hint: selectedScenario?.label || "待配置" },
+    { id: 3, label: "预检与执行", hint: isActualRun ? "Cube Studio" : "等待真实 Pipeline" },
+    { id: 4, label: "结果与证据", hint: status === "completed" ? "可查看" : "等待运行" },
+  ];
 
   return (
-    <div className="min-w-0 space-y-5">
+    <div className="min-w-0 space-y-4 pb-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
             <MonitorPlay className="h-4 w-4" />
-            Docker / ROS 算法规格编排
+            Docker / ROS 生产算法编排
           </div>
-          <h1 className="text-3xl font-bold">机器人仿真实验室</h1>
+          <h1 className="text-3xl font-bold">算法运行与仿真实验室</h1>
           <p className="mt-2 text-muted-foreground">
-            将封装好的算法规格加入运行链，先做 ROS 接口预检，再启动可视化编排演练。
+            从不可变算法资产到可校验证据的一站式工作台，只提交真实 Cube Studio Pipeline。
           </p>
-          <div className="mt-3 flex max-w-3xl items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            当前为服务端驱动的合成编排演练，不产生碰撞、性能或算法正确性的真实结论；正式验收仍需 Docker + ROS 2 + Gazebo 执行器。
+          <div className={`mt-3 flex max-w-3xl items-start gap-2 rounded-lg border px-3 py-2 text-xs ${
+            isActualRun
+              ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+              : "border-amber-500/25 bg-amber-500/10 text-amber-300"
+          }`}>
+            {isActualRun ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            {isActualRun
+              ? "当前任务将提交真实 Cube Studio / Argo Workflow，并以容器断言和 MinIO 产物作为闭环证据。"
+              : "尚未形成可运行链：请从工作流画布选择真实 Pipeline、机器人和已构建算法资产。"}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {status === "running" ? (
-            <Button variant="outline" onClick={pauseSimulation}>
-              <Pause className="mr-2 h-4 w-4" />暂停
-            </Button>
-          ) : status === "paused" ? (
-            <Button variant="outline" onClick={resumeSimulation}>
-              <Play className="mr-2 h-4 w-4" />继续
+          <Button
+            variant="outline"
+            onClick={() => {
+              setHistoryOpen(true);
+              void loadRunHistory();
+            }}
+          >
+            <History className="mr-2 h-4 w-4" />运行记录
+          </Button>
+          <Button
+            variant="outline"
+            onClick={validateConfiguration}
+            disabled={!usesRealPipeline || ["validating", "running", "canceling"].includes(status)}
+          >
+            <ShieldCheck className="mr-2 h-4 w-4" />运行前检查
+          </Button>
+          {(status === "running" || status === "canceling") && isActualRun ? (
+            <Button disabled>
+              <Activity className="mr-2 h-4 w-4 animate-pulse" />
+              {status === "canceling" ? "正在停止真实任务" : "真实任务运行中"}
             </Button>
           ) : (
             <Button
               onClick={startSimulation}
-              disabled={selectedAlgorithms.length === 0 || status === "validating"}
+              disabled={!usesRealPipeline || status === "validating"}
             >
               <Play className="mr-2 h-4 w-4" />
-              {status === "validating" ? "正在预检" : "启动演练"}
+              {status === "validating" ? "正在预检" : "运行真实 Pipeline"}
             </Button>
           )}
-          <Button variant="outline" onClick={resetSimulation}>
+          {status === "running" && isActualRun && (
+            <Button
+              variant="destructive"
+              onClick={cancelSimulation}
+            >
+              <StopCircle className="mr-2 h-4 w-4" />停止 Workflow
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={resetSimulation}
+            disabled={["running", "canceling", "validating"].includes(status)}
+          >
             <RotateCcw className="mr-2 h-4 w-4" />重置
           </Button>
           {workflow.monitoringData && (
@@ -540,38 +889,117 @@ export default function SimulationLab() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_300px]">
-        <Card className="xl:h-[730px]">
+      <Card className="overflow-hidden border-border/80 bg-card/70">
+        <CardContent className="p-0">
+          <div className="grid divide-y md:grid-cols-4 md:divide-x md:divide-y-0">
+            {workflowSteps.map((step) => {
+              const complete = workflowStep > step.id || status === "completed";
+              const active = workflowStep === step.id && status !== "completed";
+              return (
+                <div key={step.id} className={`flex items-center gap-3 px-4 py-3 ${active ? "bg-primary/8" : ""}`}>
+                  <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-xs font-semibold ${
+                    complete
+                      ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
+                      : active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground"
+                  }`}>
+                    {complete ? <CheckCircle2 className="h-4 w-4" /> : step.id}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{step.label}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{step.hint}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_330px]">
+        <Card className="overflow-hidden lg:sticky lg:top-4 lg:h-[780px]">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Container className="h-4 w-4" />
-              仿真算法库
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">拖动本地镜像或 GitHub 算法规格到运行链</p>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Container className="h-4 w-4" />
+                算法组件库
+              </CardTitle>
+              <Badge variant="secondary">{filteredAlgorithms.length}/{algorithms.length}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">只有已构建、摘要锁定并绑定 Argo Workflow 的资产可加入运行链</p>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[620px] pr-3">
-              <div className="space-y-3">
-                {algorithms.map((algorithm) => {
+          <CardContent className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={assetQuery}
+                onChange={(event) => setAssetQuery(event.target.value)}
+                placeholder="搜索名称、模块或镜像"
+                className="pl-9"
+                aria-label="搜索算法组件"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/40 p-1">
+              {([
+                ["actual", "可运行"],
+                ["retail", "便利店"],
+                ["all", "全部"],
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={assetFilter === value ? "secondary" : "ghost"}
+                  className="h-7 px-1 text-[11px]"
+                  onClick={() => setAssetFilter(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto w-full justify-start gap-3 border-dashed px-3 py-2.5 text-left"
+              disabled={compositionLocked || !canApplyRetailTemplate}
+              onClick={applyRetailTemplate}
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-500/15 text-violet-400">
+                <Store className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-medium">装载当前便利店 Pipeline</span>
+                <span className="block truncate text-[10px] text-muted-foreground">点云/识别/导航/抓取基线 → MinIO 证据</span>
+              </span>
+            </Button>
+            <ScrollArea className="h-[500px] pr-3 xl:h-[555px]">
+              <div className="space-y-2">
+                {filteredAlgorithms.map((algorithm) => {
                   const isSelected = selectedAlgorithmIds.some(
                     (id) => String(id) === String(algorithm.id),
                   );
+                  const canRun = isProductionAsset(algorithm);
+                  const isBoundToWorkflow = !workflow.pipelineId || workflowBoundAlgorithmIds.some(
+                    (id) => String(id) === String(algorithm.id),
+                  );
+                  const canAdd = canRun && isBoundToWorkflow;
                   return (
                     <div
                       key={algorithm.id}
-                      draggable={!compositionLocked}
+                      draggable={!compositionLocked && canAdd}
                       onDragStart={(event) => {
                         event.dataTransfer.setData("simulation-algorithm-id", String(algorithm.id));
                         event.dataTransfer.effectAllowed = "copy";
                       }}
-                      onDoubleClick={() => addAlgorithm(algorithm.id)}
-                      className={`cursor-grab rounded-xl border p-3 transition ${
-                        isSelected ? "border-primary/50 bg-primary/10" : "hover:border-primary/40 hover:bg-accent"
-                      }`}
-                      aria-disabled={compositionLocked}
+                       onDoubleClick={() => addAlgorithm(algorithm.id)}
+                       onClick={() => addAlgorithm(algorithm.id)}
+                       className={`rounded-lg border p-2.5 transition ${canAdd ? "cursor-pointer" : "cursor-not-allowed opacity-70"} ${
+                         isSelected ? "border-primary/50 bg-primary/10" : "hover:border-primary/40 hover:bg-accent"
+                       }`}
+                      aria-disabled={compositionLocked || !canAdd}
                     >
-                      <div className="flex items-start gap-3">
-                        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="flex items-start gap-2.5">
+                        <GripVertical className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-semibold">{algorithm.name}</span>
@@ -584,12 +1012,13 @@ export default function SimulationLab() {
                             />
                           </div>
                           <p className="mt-1 text-xs text-muted-foreground">{algorithm.module}</p>
-                          <div className="mt-2 truncate rounded bg-background/70 px-2 py-1 font-mono text-[10px]">
-                            {algorithm.image}
-                          </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-1">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
                             <Badge variant="outline" className="px-1.5 py-0 text-[9px]">
-                              {algorithm.status === "verified-source" ? "源码已验证" : "本地镜像"}
+                              {canRun
+                                ? "真实 Pipeline"
+                                : algorithm.status === "verified-source"
+                                  ? "源码已验证 · 待构建"
+                                  : "本地镜像"}
                             </Badge>
                             {algorithm.license && (
                               <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
@@ -614,10 +1043,13 @@ export default function SimulationLab() {
                               size="sm"
                               variant={isSelected ? "secondary" : "outline"}
                               className="ml-auto h-7 px-2 text-[10px]"
-                              disabled={compositionLocked || isSelected}
-                              onClick={() => addAlgorithm(algorithm.id)}
+                              disabled={compositionLocked || isSelected || !canAdd}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                addAlgorithm(algorithm.id);
+                              }}
                             >
-                              {isSelected ? "已加入" : "加入运行链"}
+                              {isSelected ? "已加入" : canAdd ? "加入运行链" : canRun ? "未绑定" : "待构建"}
                             </Button>
                           </div>
                         </div>
@@ -625,6 +1057,17 @@ export default function SimulationLab() {
                     </div>
                   );
                 })}
+                {filteredAlgorithms.length === 0 && (
+                  <div className="grid min-h-44 place-items-center rounded-lg border border-dashed text-center">
+                    <div>
+                      <PackageSearch className="mx-auto h-7 w-7 text-muted-foreground" />
+                      <p className="mt-2 text-sm">没有匹配的算法</p>
+                      <button className="mt-1 text-xs text-primary" onClick={() => { setAssetQuery(""); setAssetFilter("all"); }}>
+                        清除筛选
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -635,17 +1078,20 @@ export default function SimulationLab() {
             <CardHeader className="pb-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Cpu className="h-4 w-4" />
-                  容器运行链
+                  <Workflow className="h-4 w-4" />
+                  运行链与环境
                 </CardTitle>
                 <div className="flex min-w-0 flex-1 flex-wrap justify-end gap-2">
                   <div className="w-full sm:w-52">
                     <Select
                       value={selectedScene}
-                      onValueChange={setSelectedScene}
+                      onValueChange={(value) => {
+                        clearFinishedRun();
+                        setSelectedScene(value);
+                      }}
                       disabled={compositionLocked}
                     >
-                      <SelectTrigger aria-label="选择演练场景">
+                      <SelectTrigger aria-label="选择运行场景">
                         <SelectValue placeholder="选择场景" />
                       </SelectTrigger>
                       <SelectContent>
@@ -661,6 +1107,7 @@ export default function SimulationLab() {
                   <Select
                     value={selectedRobotId}
                     onValueChange={(id) => {
+                      clearFinishedRun();
                       setSelectedRobotId(id);
                       const robot = robots.find((item) => String(item.id) === id);
                       if (robot?.model?.toUpperCase().includes("ARM")) {
@@ -682,16 +1129,17 @@ export default function SimulationLab() {
                   <div className="w-full sm:w-52">
                     <Select
                       value={faultMode}
-                      onValueChange={(value) => setFaultMode(value as typeof faultMode)}
-                      disabled={compositionLocked}
+                      onValueChange={(value) => {
+                        clearFinishedRun();
+                        setFaultMode(value as typeof faultMode);
+                      }}
+                      disabled
                     >
-                      <SelectTrigger aria-label="选择故障演练">
-                        <SelectValue placeholder="故障演练" />
+                      <SelectTrigger aria-label="故障注入策略">
+                        <SelectValue placeholder="故障注入策略" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">无故障注入</SelectItem>
-                        <SelectItem value="sensor-dropout">传感器中断</SelectItem>
-                        <SelectItem value="algorithm-timeout">算法超时</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -699,6 +1147,22 @@ export default function SimulationLab() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-3 grid gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs sm:grid-cols-3">
+                <div className="min-w-0">
+                  <span className="text-muted-foreground">来源工作流</span>
+                  <p className="truncate font-medium">{workflow.name || "未关联工作流"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">执行通道</span>
+                  <p className={isActualRun ? "font-medium text-emerald-400" : "font-medium text-amber-400"}>
+                    {isActualRun ? "真实 Cube Studio" : "未提交"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">接口链</span>
+                  <p className="font-medium">{selectedAlgorithms.length ? `${selectedAlgorithms.length} 个节点` : "待选择"}</p>
+                </div>
+              </div>
               <div
                 className="min-h-28 rounded-xl border-2 border-dashed border-border bg-muted/20 p-4"
                 onDragOver={(event) => {
@@ -709,7 +1173,7 @@ export default function SimulationLab() {
               >
                 {selectedAlgorithms.length === 0 ? (
                   <div className="flex h-20 items-center justify-center text-sm text-muted-foreground">
-                    将左侧算法容器拖动到这里
+                    从组件库单击算法，或拖动到这里组成运行链
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
@@ -770,10 +1234,18 @@ export default function SimulationLab() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <MonitorPlay className="h-4 w-4" />
-                  {selectedScenario?.label || "演练场景"}
+                  {selectedScenario?.label || "运行场景"}
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">编排画布 · 非物理仿真</Badge>
+                  <Badge variant="outline">
+                    {isRetailEvidence
+                      ? "点云 Mesh · A* 轨迹证据"
+                      : isPhysicsEvidence
+                      ? "Bullet 物理轨迹 · WebGL 遥测回放"
+                      : isActualRun
+                        ? "运行拓扑 · 真实容器证据"
+                        : "等待真实运行证据"}
+                  </Badge>
                   <Badge
                     className={
                       status === "completed"
@@ -790,7 +1262,7 @@ export default function SimulationLab() {
                     }
                   >
                     {status === "completed"
-                      ? "演练完成"
+                      ? "运行完成"
                       : status === "running"
                         ? "运行中"
                         : status === "paused"
@@ -798,7 +1270,7 @@ export default function SimulationLab() {
                           : status === "validating"
                             ? "接口预检"
                             : status === "failed"
-                              ? "演练失败"
+                              ? "运行失败"
                               : status === "canceled"
                                 ? "已取消"
                                 : status === "interrupted"
@@ -809,39 +1281,19 @@ export default function SimulationLab() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="simulation-world">
-                <div className="simulation-grid" />
-                <div className="warehouse-shelf shelf-a"><span>A-01</span></div>
-                <div className="warehouse-shelf shelf-b"><span>B-07</span></div>
-                <div className="warehouse-obstacle obstacle-a" />
-                <div className="warehouse-obstacle obstacle-b" />
-                <div className="target-zone">目标位</div>
-                <div
-                  className={`simulation-robot ${status === "running" ? "is-running" : ""}`}
-                  style={{ left: `${robotLeft}%`, top: `${robotTop}%` }}
-                >
-                  <div className="robot-lidar" />
-                  <div className="robot-body">
-                    <span>{selectedRobot?.model || "ROBOT"}</span>
-                  </div>
-                  <div className="robot-wheel left" />
-                  <div className="robot-wheel right" />
-                  {status !== "idle" && <div className="robot-scan" />}
-                </div>
-                {status !== "idle" && (
-                  <svg className="simulation-path" viewBox="0 0 1000 420" preserveAspectRatio="none">
-                    <path d="M 90 290 C 250 290, 260 100, 470 165 S 760 330, 900 105" />
-                  </svg>
-                )}
-                <div className="scene-overlay">
-                  <div><span>X</span>{poseX.toFixed(2)} m</div>
-                  <div><span>Y</span>{poseY.toFixed(2)} m</div>
-                  <div><span>SIM</span>{simTime.toFixed(1)} s</div>
-                </div>
-              </div>
+              <Suspense fallback={<div className="grid min-h-[520px] place-items-center text-sm text-muted-foreground">正在加载 WebGL 遥测查看器…</div>}>
+                <PhysicsSimulationViewport
+                  sceneId={selectedScene}
+                  runId={runSnapshot?.id}
+                  status={status}
+                  robotModel={selectedRobot?.model}
+                  evidence={runSnapshot?.evidence}
+                  pose={runSnapshot?.pose}
+                />
+              </Suspense>
               <div className="border-t p-4">
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span>编排演练进度</span>
+                  <span>{isActualRun ? "Cube Studio Workflow 进度" : "尚未提交真实 Pipeline"}</span>
                   <span className="font-mono">{progress}%</span>
                 </div>
                 <Progress value={progress} />
@@ -850,7 +1302,7 @@ export default function SimulationLab() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:col-span-2 xl:col-span-1 xl:block xl:space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -861,28 +1313,72 @@ export default function SimulationLab() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-xs">
                 <span className="text-muted-foreground">执行模式</span>
-                <Badge variant="outline">浏览器编排演练 · 合成</Badge>
+                <Badge variant="outline">
+                  {isActualRun ? "Cube Studio / Argo · 真实容器" : "未运行"}
+                </Badge>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">演练速率（合成）</p>
-                  <p className="mt-1 text-xl font-bold">
-                    {rehearsalRate === null ? "—" : `${Number(rehearsalRate).toFixed(2)}x`}
-                  </p>
+              {isActualRun ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">容器状态</p>
+                    <p className={`mt-1 text-lg font-bold ${status === "completed" ? "text-emerald-400" : ""}`}>
+                      {status === "completed" ? "断言通过" : status === "running" ? "运行中" : "等待执行"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">{isRetailEvidence ? "Mesh 面数" : isPhysicsEvidence ? "目标误差" : "识别数量"}</p>
+                    <p className="mt-1 text-lg font-bold">
+                      {isRetailEvidence
+                        ? runSnapshot?.evidence?.scene?.mesh?.faces?.toLocaleString() ?? "—"
+                        : isPhysicsEvidence
+                        ? runSnapshot?.evidence?.metrics?.final_position_error_m != null
+                          ? `${(runSnapshot.evidence.metrics.final_position_error_m * 1000).toFixed(2)} mm`
+                          : "—"
+                        : runSnapshot?.evidence?.found ?? "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">{isRetailEvidence ? "导航路径" : isPhysicsEvidence ? "实时因子" : "算法耗时"}</p>
+                    <p className="mt-1 text-lg font-bold">
+                      {isRetailEvidence
+                        ? runSnapshot?.evidence?.navigation?.path_length_m != null
+                          ? `${runSnapshot.evidence.navigation.path_length_m.toFixed(3)} m`
+                          : "—"
+                        : isPhysicsEvidence
+                        ? runSnapshot?.evidence?.metrics?.real_time_factor != null
+                          ? `${runSnapshot.evidence.metrics.real_time_factor.toFixed(2)}x`
+                          : "—"
+                        : runSnapshot?.evidence?.elapsed_ms != null
+                          ? `${runSnapshot.evidence.elapsed_ms.toFixed(2)} ms`
+                          : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">证据归档</p>
+                    <p className="mt-1 text-lg font-bold">{runSnapshot?.artifact_id ? "MinIO" : "等待中"}</p>
+                  </div>
                 </div>
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">物理碰撞</p>
-                  <p className="mt-1 text-xl font-bold text-muted-foreground">未测量</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">运行遥测</p>
+                    <p className="mt-1 text-xl font-bold">—</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">接口链状态</p>
+                    <p className="mt-1 text-lg font-bold">{compatibility?.runnable ? "可提交" : "待真实资产"}</p>
+                  </div>
+                  <div className="col-span-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">
+                    页面不会生成合成位置、轨迹或性能指标；提交真实 Pipeline 后才显示容器采集的证据。
+                  </div>
                 </div>
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">容器 CPU</p>
-                  <p className="mt-1 text-xl font-bold text-muted-foreground">未连接</p>
+              )}
+              {runSnapshot?.last_sync_error && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>集群状态同步暂时失败，页面会自动重试：{runSnapshot.last_sync_error}</span>
                 </div>
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">容器内存</p>
-                  <p className="mt-1 text-xl font-bold text-muted-foreground">未连接</p>
-                </div>
-              </div>
+              )}
               {runSnapshot?.run_manifest && (
                 <div className="rounded-lg border bg-muted/20 p-3 text-xs">
                   <div className="flex items-center justify-between gap-2">
@@ -908,7 +1404,7 @@ export default function SimulationLab() {
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-red-400" />
                     )}
-                    {compatibility.runnable ? "ROS 接口预检通过" : "接口预检失败"}
+                    {compatibility.runnable ? "镜像、接口与场景预检通过" : "运行前预检失败"}
                   </div>
                   <p className="mt-1 text-muted-foreground">
                     评分 {compatibility.score} · {compatibility.steps.length} 个算法 ·{" "}
@@ -925,15 +1421,15 @@ export default function SimulationLab() {
             </CardContent>
           </Card>
 
-          <Card className="h-[466px]">
+          <Card className="h-[420px] xl:h-[466px]">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Terminal className="h-4 w-4" />
-                容器日志
+                {isActualRun ? "运行事件与容器回传" : "仿真事件日志"}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[370px] rounded-lg border bg-slate-950 p-3">
+              <ScrollArea className="h-[325px] rounded-lg border bg-slate-950 p-3 xl:h-[370px]">
                 <div className="space-y-2 font-mono text-xs text-slate-300">
                   {logs.map((log, index) => (
                     <div key={`${index}-${log}`} className="flex gap-2">
@@ -956,7 +1452,11 @@ export default function SimulationLab() {
                   {(status === "running" || status === "validating") && (
                     <div className="flex items-center gap-2 text-blue-400">
                       <span className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
-                      {status === "validating" ? "正在校验算法接口..." : "正在接收仿真数据..."}
+                      {status === "validating"
+                        ? "正在校验镜像、输入输出与场景..."
+                        : isActualRun
+                          ? "正在同步 Cube Studio Workflow 状态..."
+                          : "等待真实 Pipeline 提交..."}
                     </div>
                   )}
                 </div>
@@ -965,9 +1465,69 @@ export default function SimulationLab() {
           </Card>
 
           {status === "completed" && (
-            <div className="flex items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200">
-              <CheckCircle2 className="h-5 w-5" />
-              编排演练完成；结果仅为合成证据，不能发布为“算法验证通过”。
+            <div className={`rounded-xl border p-4 text-sm md:col-span-2 xl:col-span-1 ${
+              isActualRun
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                : "border-blue-500/30 bg-blue-500/10 text-blue-200"
+            }`}>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                  {runSnapshot?.outcome?.reason || "真实 Cube Studio 闭环验证通过。"}
+                  </p>
+                  {runSnapshot?.evidence && (
+                    <div className="mt-3 space-y-2 rounded-lg border border-emerald-500/20 bg-background/30 p-3 text-xs">
+                      {isRetailEvidence ? (
+                        <>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">点云 / Mesh</span><code>{runSnapshot.evidence.input?.point_count?.toLocaleString()} 点 / {runSnapshot.evidence.scene?.mesh?.faces?.toLocaleString()} 面</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">识别 / 导航</span><code>{runSnapshot.evidence.perception?.detection_count} 个 / {runSnapshot.evidence.navigation?.path_length_m?.toFixed(3)} m</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">传统抓取 / VLA</span><code>{runSnapshot.evidence.manipulation?.reachable ? "IK 可达" : "不可达"} / {runSnapshot.evidence.manipulation?.vla?.status || "未配置"}</code></div>
+                          {runSnapshot.evidence.blockers?.map((message) => (
+                            <div key={message} className="rounded border border-amber-500/25 bg-amber-500/10 p-2 text-amber-200">能力边界：{message}</div>
+                          ))}
+                        </>
+                      ) : isPhysicsEvidence ? (
+                        <>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">物理引擎</span><code>{runSnapshot.evidence.engine?.name} {runSnapshot.evidence.engine?.version}</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">搬运距离 / 目标误差</span><code>{runSnapshot.evidence.metrics?.object_transfer_distance_m?.toFixed(3)} m / {((runSnapshot.evidence.metrics?.final_position_error_m || 0) * 1000).toFixed(2)} mm</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">轨迹 / 安全接触</span><code>{runSnapshot.evidence.playback?.keyframe_count} 帧 / {runSnapshot.evidence.metrics?.safety_contact_steps} steps</code></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">期望条码</span><code>{runSnapshot.evidence.expected_barcode}</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">识别条码</span><code>{runSnapshot.evidence.detected_barcode}</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">格式 / 耗时</span><code>{runSnapshot.evidence.barcode_format} / {runSnapshot.evidence.elapsed_ms?.toFixed(2)} ms</code></div>
+                        </>
+                      )}
+                      <p className="truncate font-mono text-[10px] opacity-60" title={runSnapshot.evidence.artifact_key}>
+                        MinIO: {runSnapshot.evidence.artifact_key}
+                      </p>
+                    </div>
+                  )}
+                  {runSnapshot?.artifact_id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 w-full border-emerald-500/30 bg-background/20"
+                      onClick={downloadEvidence}
+                      disabled={downloadingEvidence}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {downloadingEvidence ? "正在下载" : "下载完整运行证据包"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {startError && !runSnapshot && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200 md:col-span-2 xl:col-span-1">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-medium">本次运行没有创建成功</p>
+                <p className="mt-1 text-xs opacity-80">{startError}</p>
+              </div>
             </div>
           )}
           {status === "failed" && runSnapshot?.outcome && (
@@ -978,6 +1538,72 @@ export default function SimulationLab() {
           )}
         </div>
       </div>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-h-[82vh] max-w-3xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />真实运行记录
+            </DialogTitle>
+            <DialogDescription>
+              仅展示 Cube Studio / Argo 的真实运行；打开记录时从 MinIO 恢复遥测和证据。
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[62vh] pr-3">
+            <div className="space-y-2">
+              {runHistory.map((run) => {
+                const publishable = run.outcome?.publishable === true;
+                return (
+                  <button
+                    key={run.id}
+                    type="button"
+                    onClick={() => void restoreRun(run)}
+                    className="w-full rounded-lg border bg-muted/15 p-3 text-left transition hover:border-primary/45 hover:bg-muted/30"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
+                          {readableWorkflowName(run)}
+                        </p>
+                        <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                          {run.remote_workflow?.namespace || "pipeline"}/{run.remote_workflow?.name || "—"}
+                        </p>
+                      </div>
+                      <Badge variant={publishable ? "secondary" : "outline"}>
+                        {publishable ? "证据通过" : containerPhaseLabel[run.status] || run.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                      <span>{run.algorithms?.[0]?.name || "未命名算法"}</span>
+                      <span>{run.robot?.name || "未绑定机器人"}</span>
+                      <span className="sm:text-right">
+                        {run.finished_at || run.started_at
+                          ? new Intl.DateTimeFormat("zh-CN", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }).format(new Date(run.finished_at || run.started_at || ""))
+                          : "—"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+              {!historyLoading && runHistory.length === 0 && (
+                <div className="grid min-h-40 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                  暂无真实运行记录
+                </div>
+              )}
+              {historyLoading && runHistory.length === 0 && (
+                <div className="grid min-h-40 place-items-center text-sm text-muted-foreground">
+                  正在读取集群运行记录…
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

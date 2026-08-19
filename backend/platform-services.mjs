@@ -20,6 +20,7 @@ function parseMinioEndpoint(value) {
 const cubeStudioBaseUrl = trimSlash(process.env.CUBE_STUDIO_BASE_URL);
 const cubeStudioToken = String(process.env.CUBE_STUDIO_TOKEN || "");
 const minioEndpoint = parseMinioEndpoint(process.env.MINIO_ENDPOINT);
+const cubeMinioEndpoint = parseMinioEndpoint(process.env.CUBE_MINIO_ENDPOINT);
 const minioBucket = String(process.env.MINIO_BUCKET || "mlpipeline");
 const localArtifactDir = path.resolve(
   process.env.LOCAL_ARTIFACT_DIR || path.join(process.cwd(), "backend", "artifacts")
@@ -33,6 +34,17 @@ const minioClient = minioEndpoint
       accessKey: String(process.env.MINIO_ACCESS_KEY || "minio"),
       secretKey: String(process.env.MINIO_SECRET_KEY || "minio123"),
       region: String(process.env.MINIO_REGION || "us-east-1")
+    })
+  : null;
+
+const cubeMinioClient = cubeMinioEndpoint
+  ? new Minio.Client({
+      endPoint: cubeMinioEndpoint.endPoint,
+      port: cubeMinioEndpoint.port,
+      useSSL: cubeMinioEndpoint.useSSL,
+      accessKey: String(process.env.CUBE_MINIO_ACCESS_KEY || process.env.MINIO_ACCESS_KEY || "minio"),
+      secretKey: String(process.env.CUBE_MINIO_SECRET_KEY || process.env.MINIO_SECRET_KEY || "minio123"),
+      region: String(process.env.CUBE_MINIO_REGION || process.env.MINIO_REGION || "us-east-1")
     })
   : null;
 
@@ -284,6 +296,11 @@ export const artifactStore = {
   },
 
   async readObject(artifact) {
+    if (artifact.storage?.provider === "cube-minio" && cubeMinioClient) {
+      return streamToBuffer(
+        await cubeMinioClient.getObject(minioBucket, artifact.storage.object_key)
+      );
+    }
     if (artifact.storage?.provider === "minio" && minioClient) {
       return streamToBuffer(
         await minioClient.getObject(minioBucket, artifact.storage.object_key)
@@ -293,6 +310,20 @@ export const artifactStore = {
       artifact.storage?.local_path ||
       path.join(localArtifactDir, ...String(artifact.storage?.object_key || "").split("/"));
     return readFile(localPath);
+  },
+
+  async readKey(objectName) {
+    if (minioClient) {
+      return streamToBuffer(await minioClient.getObject(minioBucket, objectName));
+    }
+    return readFile(path.join(localArtifactDir, ...String(objectName).split("/")));
+  },
+
+  async readWorkflowKey(objectName) {
+    if (cubeMinioClient) {
+      return streamToBuffer(await cubeMinioClient.getObject(minioBucket, objectName));
+    }
+    return this.readKey(objectName);
   },
 
   async inspectLocalObject(artifact) {

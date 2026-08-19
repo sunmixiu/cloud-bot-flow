@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Cube Studio compatibility endpoints return heterogeneous legacy JSON; callers validate their domain payloads. */
 // API全局配置
 import mqtt from 'mqtt';
 
@@ -399,12 +400,14 @@ export const simulationApi = {
     algorithms: any[];
     scene?: string;
     robot?: any;
+    pipeline_id?: string | number;
   }) => apiRequest<any>('/simulation/preflight', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
   run: (data: {
     workflow_name: string;
+    pipeline_id?: string | number;
     robot?: any;
     algorithms: any[];
     scene?: string;

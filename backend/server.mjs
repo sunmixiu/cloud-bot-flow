@@ -3,15 +3,18 @@ import { copyFile, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 import {
   artifactStore,
   cubeStudio,
   platformConfiguration
 } from "./platform-services.mjs";
+import { kubernetesClient } from "./kubernetes-service.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const backendDir = path.dirname(currentFile);
 const projectDir = path.resolve(backendDir, "..");
+const workspaceDir = path.resolve(projectDir, "..");
 const staticDir = path.join(projectDir, "dist");
 const dataFile = path.join(backendDir, "data.json");
 const dataBackupFile = path.join(backendDir, "data.json.bak");
@@ -186,9 +189,17 @@ store.registryRepositories ??= [
 store.pipelineRuns ??= [];
 store.artifacts ??= [];
 
+for (const artifact of store.artifacts) {
+  const run = store.simulationRuns.find((item) => item.id === artifact.run_id);
+  if (run?.execution_mode === "cube-studio-argo" && artifact.storage?.provider === "minio") {
+    artifact.storage.provider = "cube-minio";
+  }
+}
+
 const bootedAt = new Date().toISOString();
 for (const run of store.simulationRuns) {
   if (run.status === "running" || run.status === "paused") {
+    if (run.execution_mode === "cube-studio-argo" && run.remote_workflow?.name) continue;
     run.status = "interrupted";
     run.finished_at = bootedAt;
     run.updated_at = bootedAt;
@@ -273,6 +284,159 @@ store.simulationAlgorithms = upsertCatalogItems(
 );
 store.algorithms = upsertCatalogItems(store.algorithms, catalogWorkflowAlgorithms);
 
+const physicsPickPlaceAsset = {
+  id: 120,
+  code_module_id: 120,
+  catalog_key: "bullet-panda-pick-place",
+  name: "Bullet Panda 机械臂物理取放",
+  module: "刚体动力学与操作",
+  language: "Python / Bullet C++",
+  version: "1.0.0",
+  author: "cloud-bot-flow / Bullet Physics",
+  repository_url: "https://github.com/bulletphysics/bullet3",
+  branch: "master",
+  verified_commit: "63c4d67e337017f9d8b298c900e9aabdb69296e7",
+  license: "Zlib",
+  image: "localhost:5001/cloud-bot-flow/physics-pick-place@sha256:3f5bfdbabe283952d4d9579edbefe37242f56b3b479f0bd22282e251fa445846",
+  image_digest: "sha256:3f5bfdbabe283952d4d9579edbefe37242f56b3b479f0bd22282e251fa445846",
+  image_status: "verified",
+  command: "python -m physics_sim.run --output /output --seed 20260818",
+  runtime: "PyBullet 3.2.7 / Python 3.11",
+  inputs: [],
+  outputs: ["simulation-run.json", "trajectory.json", "preview.png", "SHA256SUMS.json"],
+  description: "在 Bullet 240 Hz 刚体动力学中驱动 Franka Panda 完成接近、抓取、搬运、放置和撤离，输出关节轨迹、接触检查、相机帧和可复核断言。",
+  status: "ready",
+  execution_adapter: "cube-studio-argo-workflow",
+  evidence_kind: "physics-simulation",
+  workflow_manifest: "algorithm/physics-pick-place/workflow/closed-loop.yaml",
+  color: "#22d3ee",
+  verified_at: "2026-08-18T00:00:00.000Z"
+};
+
+store.codeModules = upsertCatalogItems(store.codeModules, [{
+  ...physicsPickPlaceAsset,
+  visibility: "public",
+  source: "github",
+  status: "verified",
+  updated_at: physicsPickPlaceAsset.verified_at
+}]);
+store.simulationAlgorithms = upsertCatalogItems(
+  store.simulationAlgorithms,
+  [physicsPickPlaceAsset]
+);
+store.algorithms = upsertCatalogItems(store.algorithms, [{
+  id: physicsPickPlaceAsset.id,
+  catalog_key: physicsPickPlaceAsset.catalog_key,
+  name: physicsPickPlaceAsset.name,
+  describe: physicsPickPlaceAsset.description,
+  created_on: physicsPickPlaceAsset.verified_at,
+  changed_on: physicsPickPlaceAsset.verified_at,
+  entrypoint: physicsPickPlaceAsset.command,
+  dockerfile: "algorithm/physics-pick-place/Dockerfile",
+  gitpath: physicsPickPlaceAsset.repository_url,
+  images_url: physicsPickPlaceAsset.image,
+  image_status: "verified",
+  license: physicsPickPlaceAsset.license,
+  verified_commit: physicsPickPlaceAsset.verified_commit,
+  project: store.projects[0]
+}]);
+store.pipelines = upsertCatalogItems(store.pipelines, [{
+  id: 6,
+  catalog_key: "physics-pick-place-pipeline",
+  name: "机械臂物理取放闭环",
+  pipeline_url: "<span>机械臂物理取放闭环</span>",
+  description: "Bullet 物理求解 → 轨迹与接触断言 → MinIO 证据归档 → WebGL 遥测回放",
+  creator: "cloud-bot-flow",
+  modified: "2026-08-18 12:00",
+  project: store.projects[0],
+  algorithm_ids: [physicsPickPlaceAsset.id],
+  workflow_manifest: physicsPickPlaceAsset.workflow_manifest,
+  runtime: "Argo Workflows / Cube Studio / PyBullet",
+  image: physicsPickPlaceAsset.image,
+  image_digest: physicsPickPlaceAsset.image_digest,
+  status: "verified"
+}]);
+
+const retailDigitalTwinAsset = {
+  id: 121,
+  code_module_id: 121,
+  catalog_key: "retail-digital-twin-baseline",
+  name: "便利店点云数字孪生闭环",
+  module: "感认知 / 导航 / 上半身",
+  language: "Python",
+  version: "1.0.1",
+  author: "cloud-bot-flow",
+  repository_url: "https://github.com/durancexuan/cloud-bot-flow",
+  branch: "workspace",
+  verified_commit: "workspace-20260818",
+  license: "Internal",
+  image: "localhost:5001/cloud-bot-flow/retail-digital-twin@sha256:64ac7fa30ec420f3bc8e27f18ea635787e0b092d7c75ca6732601c5575097f5e",
+  image_digest: "sha256:64ac7fa30ec420f3bc8e27f18ea635787e0b092d7c75ca6732601c5575097f5e",
+  image_status: "verified",
+  command: "python -m retail_twin.run --output /output --seed 20260818",
+  runtime: "Python 3.12 / OCI / Argo Workflows",
+  inputs: [],
+  outputs: [
+    "retail-run.json",
+    "retail-store.pcd",
+    "retail-store.obj",
+    "navigation-trajectory.json",
+    "preview.png",
+    "SHA256SUMS.json"
+  ],
+  description: "真实执行点云体素化 Mesh、几何识别、占据栅格、任务图、A* 导航、差速轨迹和传统解析 IK；VLA 未配置时明确阻断，不伪造推理结果。",
+  status: "ready",
+  execution_adapter: "cube-studio-argo-workflow",
+  evidence_kind: "retail-digital-twin",
+  workflow_manifest: "algorithm/retail-digital-twin/workflow/closed-loop.yaml",
+  color: "#10b981",
+  verified_at: "2026-08-18T00:00:00.000Z"
+};
+
+store.codeModules = upsertCatalogItems(store.codeModules, [{
+  ...retailDigitalTwinAsset,
+  visibility: "private",
+  source: "workspace",
+  status: "verified",
+  updated_at: retailDigitalTwinAsset.verified_at
+}]);
+store.simulationAlgorithms = upsertCatalogItems(
+  store.simulationAlgorithms,
+  [retailDigitalTwinAsset]
+);
+store.algorithms = upsertCatalogItems(store.algorithms, [{
+  id: retailDigitalTwinAsset.id,
+  catalog_key: retailDigitalTwinAsset.catalog_key,
+  name: retailDigitalTwinAsset.name,
+  describe: retailDigitalTwinAsset.description,
+  created_on: retailDigitalTwinAsset.verified_at,
+  changed_on: retailDigitalTwinAsset.verified_at,
+  entrypoint: retailDigitalTwinAsset.command,
+  dockerfile: "algorithm/retail-digital-twin/Dockerfile",
+  gitpath: retailDigitalTwinAsset.repository_url,
+  images_url: retailDigitalTwinAsset.image,
+  image_status: "verified",
+  license: retailDigitalTwinAsset.license,
+  verified_commit: retailDigitalTwinAsset.verified_commit,
+  project: store.projects[0]
+}]);
+store.pipelines = upsertCatalogItems(store.pipelines, [{
+  id: 7,
+  catalog_key: "retail-digital-twin-pipeline",
+  name: "便利店点云重建与作业闭环",
+  pipeline_url: "<span>便利店点云重建与作业闭环</span>",
+  description: "点云重建 → 场景识别 → 任务拆解 → 导航避障 → 传统抓取可达性 → 证据归档",
+  creator: "cloud-bot-flow",
+  modified: "2026-08-18 13:00",
+  project: store.projects[0],
+  algorithm_ids: [retailDigitalTwinAsset.id],
+  workflow_manifest: retailDigitalTwinAsset.workflow_manifest,
+  runtime: "Argo Workflows / Cube Studio / Python",
+  image: retailDigitalTwinAsset.image,
+  image_digest: retailDigitalTwinAsset.image_digest,
+  status: "verified"
+}]);
+
 function setCommonHeaders(response) {
   response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
@@ -306,7 +470,12 @@ async function readBody(request) {
 }
 
 async function persistStore() {
-  const snapshot = `${JSON.stringify(store, null, 2)}\n`;
+  // 轨迹帧以 MinIO 证据包为事实源，不在状态索引中重复持久化。
+  const snapshot = `${JSON.stringify(
+    store,
+    (key, value) => key === "keyframes" && Array.isArray(value) ? undefined : value,
+    2
+  )}\n`;
   const writeSnapshot = async () => {
     await writeFile(dataTempFile, snapshot, "utf8");
     JSON.parse(await readFile(dataTempFile, "utf8"));
@@ -654,8 +823,15 @@ const sceneProfiles = {
       "/joint_states": "sensor_msgs/msg/JointState",
       "/planning_scene": "moveit_msgs/msg/PlanningScene",
       "/motion_plan_request": "moveit_msgs/msg/MotionPlanRequest",
+      "/task_goal": "moveit_task_constructor_msgs/msg/TaskDescription",
+      "/planning_environment": "tesseract_msgs/msg/Environment",
+      "/program": "tesseract_msgs/msg/CompositeInstruction",
+      "/task_request": "std_msgs/msg/String",
+      "/behavior_events": "diagnostic_msgs/msg/DiagnosticArray",
       "/camera/image_raw": "sensor_msgs/msg/Image",
-      "/camera/camera_info": "sensor_msgs/msg/CameraInfo"
+      "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+      "/camera/depth/points": "sensor_msgs/msg/PointCloud2",
+      "/reference_cloud": "sensor_msgs/msg/PointCloud2"
     }
   },
   "rmf-building": {
@@ -668,6 +844,24 @@ const sceneProfiles = {
       "/fleet_states": "rmf_fleet_msgs/msg/FleetState",
       "/task_request": "rmf_task_msgs/msg/ApiRequest",
       "/tf": "tf2_msgs/msg/TFMessage"
+    }
+  },
+  "retail-store": {
+    id: "retail-store",
+    version: "1.0.0",
+    label: "便利店货架与收银区",
+    compatible_robot_kinds: ["mobile_base"],
+    topics: {
+      "/scan": "sensor_msgs/msg/LaserScan",
+      "/tf": "tf2_msgs/msg/TFMessage",
+      "/imu/data": "sensor_msgs/msg/Imu",
+      "/odom": "nav_msgs/msg/Odometry",
+      "/camera/image": "sensor_msgs/msg/Image",
+      "/camera/color": "sensor_msgs/msg/Image",
+      "/camera/depth/image": "sensor_msgs/msg/Image",
+      "/camera/image_raw": "sensor_msgs/msg/Image",
+      "/camera/camera_info": "sensor_msgs/msg/CameraInfo",
+      "/goal_pose": "geometry_msgs/msg/PoseStamped"
     }
   }
 };
@@ -703,6 +897,56 @@ const catalogRequirements = {
     capabilities: ["fleet_orchestrator"],
     scenes: ["rmf-building"],
     minimum_robots: 2
+  },
+  "opencv-retail-dnn": {
+    robot_kinds: ["mobile_base"],
+    capabilities: ["camera"],
+    scenes: ["retail-store", "warehouse"]
+  },
+  "bytetrack-retail": {
+    robot_kinds: ["mobile_base"],
+    capabilities: ["camera"],
+    scenes: ["retail-store"]
+  },
+  "paddleocr-shelf-label": {
+    robot_kinds: ["mobile_base"],
+    capabilities: ["camera"],
+    scenes: ["retail-store", "warehouse"]
+  },
+  "moveit-task-constructor": {
+    robot_kinds: ["manipulator"],
+    capabilities: ["manipulation"],
+    scenes: ["manipulation-cell"]
+  },
+  "tesseract-planning": {
+    robot_kinds: ["manipulator"],
+    capabilities: ["manipulation"],
+    scenes: ["manipulation-cell"]
+  },
+  "behaviortree-cpp": {
+    robot_kinds: ["mobile_base", "manipulator"],
+    capabilities: [],
+    scenes: ["warehouse", "retail-store", "manipulation-cell"]
+  },
+  "open3d-registration": {
+    robot_kinds: ["manipulator"],
+    capabilities: ["camera"],
+    scenes: ["manipulation-cell"]
+  },
+  "rtabmap-3d-slam": {
+    robot_kinds: ["mobile_base"],
+    capabilities: ["camera", "odometry"],
+    scenes: ["warehouse", "retail-store"]
+  },
+  "bullet-panda-pick-place": {
+    robot_kinds: ["manipulator"],
+    capabilities: ["manipulation"],
+    scenes: ["manipulation-cell"]
+  },
+  "retail-digital-twin-baseline": {
+    robot_kinds: ["mobile_base"],
+    capabilities: ["camera", "navigation", "odometry"],
+    scenes: ["retail-store"]
   }
 };
 
@@ -737,6 +981,19 @@ function getRobotProfile(robot) {
 }
 
 function getAlgorithmRequirements(algorithm) {
+  if (algorithm.evidence_kind === "physics-simulation") {
+    return catalogRequirements["bullet-panda-pick-place"];
+  }
+  if (algorithm.evidence_kind === "retail-digital-twin") {
+    return catalogRequirements["retail-digital-twin-baseline"];
+  }
+  if (algorithm.execution_adapter === "cube-studio-argo-workflow") {
+    return {
+      robot_kinds: ["mobile_base"],
+      capabilities: ["camera"],
+      scenes: ["retail-store", "warehouse"]
+    };
+  }
   if (catalogRequirements[algorithm.catalog_key]) {
     return catalogRequirements[algorithm.catalog_key];
   }
@@ -816,6 +1073,9 @@ function buildCompatibilityReport(
 
   algorithms.forEach((algorithm, index) => {
     const inputs = Array.isArray(algorithm.inputs) ? algorithm.inputs : [];
+    const generatedInputs = new Set(
+      Array.isArray(algorithm.generated_inputs) ? algorithm.generated_inputs : []
+    );
     const outputs = Array.isArray(algorithm.outputs) ? algorithm.outputs : [];
     const inputTypes = algorithm.input_types || {};
     const outputTypes = algorithm.output_types || {};
@@ -852,6 +1112,10 @@ function buildCompatibilityReport(
 
     inputs.forEach((topic) => {
       if (!availableTypes.has(topic)) {
+        if (generatedInputs.has(topic)) {
+          warnings.push(`${algorithm.name} 的 ${topic} 由闭环 Workflow 在容器内生成并留存证据`);
+          return;
+        }
         missingInputs.push(topic);
         errors.push(`${algorithm.name} 缺少必需输入 ${topic}`);
         return;
@@ -878,9 +1142,16 @@ function buildCompatibilityReport(
     });
 
     if (algorithm.image_status === "build-required") {
-      warnings.push(
-        `${algorithm.name} 仅在合成编排演练中展示；真实 Docker/Gazebo 运行前必须完成 CI 构建与制品审查`
-      );
+      errors.push(`${algorithm.name} 尚未构建经过验证的 OCI 镜像，不能进入生产运行链`);
+    }
+    if (algorithm.execution_adapter !== "cube-studio-argo-workflow") {
+      errors.push(`${algorithm.name} 尚未绑定真实 Cube Studio / Argo Workflow`);
+    }
+    if (!String(algorithm.image || "").includes("@sha256:")) {
+      errors.push(`${algorithm.name} 必须使用不可变 OCI 镜像摘要（image@sha256:...）`);
+    }
+    if (!algorithm.workflow_manifest) {
+      errors.push(`${algorithm.name} 缺少受控 Workflow 清单`);
     }
 
     steps.push({
@@ -900,15 +1171,21 @@ function buildCompatibilityReport(
   });
 
   const score = Math.max(0, 100 - errors.length * 20 - warnings.length * 3);
+  const hasArgoWorkflow = algorithms.length > 0 && algorithms.every(
+    (algorithm) =>
+      algorithm.execution_adapter === "cube-studio-argo-workflow" &&
+      Boolean(algorithm.workflow_manifest) &&
+      String(algorithm.image || "").includes("@sha256:")
+  );
   return {
-    runnable: errors.length === 0,
+    runnable: errors.length === 0 && hasArgoWorkflow,
     score,
     scene,
     scene_version: sceneProfile?.version || null,
     scene_label: sceneProfile?.label || scene,
     robot_profile: robotProfile,
-    execution_mode: "browser-orchestration-rehearsal",
-    evidence_level: "synthetic",
+    execution_mode: hasArgoWorkflow ? "cube-studio-argo" : "not-runnable",
+    evidence_level: hasArgoWorkflow ? "runtime-verified" : "none",
     errors,
     warnings,
     steps,
@@ -932,8 +1209,8 @@ function buildRunManifest({ workflowName, scene, robot, algorithms, seed, faultM
   const robotProfile = getRobotProfile(robot);
   const spec = {
     schema_version: "1.0",
-    execution_mode: "browser-orchestration-rehearsal",
-    evidence_level: "synthetic",
+    execution_mode: "cube-studio-argo",
+    evidence_level: "runtime-verified",
     workflow_name: workflowName,
     scene: {
       id: scene,
@@ -965,169 +1242,397 @@ function buildRunManifest({ workflowName, scene, robot, algorithms, seed, faultM
   };
 }
 
-function metric(value, unit, timestamp) {
+function compactRunForList(run) {
+  const playback = run.evidence?.playback;
   return {
-    value,
-    unit,
-    source: "synthetic-orchestration",
-    timestamp,
-    trustworthy: false
+    ...run,
+    evidence: run.evidence
+      ? {
+          ...run.evidence,
+          playback: playback
+            ? { ...playback, keyframes: undefined, storage: "minio-archive" }
+            : undefined
+        }
+      : undefined,
+    events: (run.events || []).map((event) => ({
+      ...event,
+      payload: event.payload?.playback
+        ? { ...event.payload, playback: { keyframe_count: event.payload.playback.keyframe_count } }
+        : event.payload
+    }))
   };
 }
 
-function updateMockRun(run, nowMs = Date.now()) {
-  if (run.status !== "running") return false;
-  const durationMs = Number(run.duration_ms || 12000);
-  const resumedAtMs = Date.parse(run.last_resumed_at || run.started_at);
-  const activeMs = Number.isFinite(resumedAtMs) ? Math.max(0, nowMs - resumedAtMs) : 0;
-  const elapsedMs = Math.min(durationMs, Number(run.accumulated_ms || 0) + activeMs);
-  const nextProgress = Math.min(100, Math.floor((elapsedMs / durationMs) * 100));
-  const previousProgress = Number(run.progress || 0);
-  const timestamp = new Date(nowMs).toISOString();
+function resolveWorkflowManifest(manifestPath) {
+  const requested = String(manifestPath || "").replaceAll("\\", "/");
+  const resolved = path.resolve(workspaceDir, requested);
+  const algorithmRoot = `${path.resolve(workspaceDir, "algorithm")}${path.sep}`;
+  if (!resolved.startsWith(algorithmRoot) || !resolved.endsWith(".yaml")) {
+    throw new Error("Workflow manifest 必须位于工作区 algorithm 目录并使用 YAML 格式");
+  }
+  return resolved;
+}
 
-  run.elapsed_ms = elapsedMs;
-  run.progress = nextProgress;
-  run.updated_at = timestamp;
-  run.pose = {
-    x: Number((nextProgress * 0.08).toFixed(2)),
-    y: Number((Math.sin(nextProgress / 12) * 1.8).toFixed(2)),
-    heading: Number((Math.sin(nextProgress / 18) * 0.35).toFixed(2)),
-    source: "synthetic-orchestration",
-    trustworthy: false,
-    timestamp
+async function submitArgoWorkflow(manifestPath) {
+  const resolvedManifest = resolveWorkflowManifest(manifestPath);
+  await stat(resolvedManifest);
+  const resource = await kubernetesClient.createWorkflow(resolvedManifest);
+  return {
+    name: resource.metadata?.name,
+    namespace: resource.metadata?.namespace || "pipeline",
+    uid: resource.metadata?.uid || null,
+    manifest_path: path.relative(workspaceDir, resolvedManifest).replaceAll("\\", "/")
   };
-  run.metrics = {
-    rehearsal_rate: metric(
-      Number((0.95 + Math.sin(nextProgress / 13) * 0.02).toFixed(2)),
-      "x",
-      timestamp
-    ),
-    collision_count: metric(null, "not_measured", timestamp),
-    cpu_usage: metric(null, "not_measured", timestamp),
-    memory_usage: metric(null, "not_measured", timestamp),
-    sim_time: metric(Number((elapsedMs / 1000).toFixed(1)), "s", timestamp)
-  };
-  run.container_states = run.algorithms.map((algorithm, index) => ({
-    id: algorithm.id,
-    name: algorithm.name,
-    status:
-      nextProgress >= 100
-        ? "completed"
-        : nextProgress < 10 + index * 3
-          ? "pulling"
-          : nextProgress < 24 + index * 3
-            ? "starting"
-            : "running"
-  }));
+}
 
-  const faultMode = run.scenario?.fault_mode || "none";
-  if (faultMode !== "none" && previousProgress < 55 && nextProgress >= 55) {
-    const faultMessages = {
-      "sensor-dropout": "合成传感器中断已触发安全停止",
-      "algorithm-timeout": "合成算法超时已触发运行终止"
-    };
-    run.status = "failed";
-    run.last_resumed_at = null;
-    run.finished_at = timestamp;
-    run.failure_reason = faultMessages[faultMode] || `故障演练 ${faultMode} 已触发`;
-    run.container_states = run.container_states.map((state, index) => ({
+function extractTarEntry(archiveBuffer, suffix) {
+  const tarBuffer = gunzipSync(archiveBuffer);
+  let offset = 0;
+  while (offset + 512 <= tarBuffer.length) {
+    const header = tarBuffer.subarray(offset, offset + 512);
+    if (header.every((value) => value === 0)) break;
+    const name = header.subarray(0, 100).toString("utf8").replace(/\0.*$/, "");
+    const sizeText = header.subarray(124, 136).toString("ascii").replace(/\0.*$/, "").trim();
+    const size = Number.parseInt(sizeText || "0", 8);
+    const dataStart = offset + 512;
+    if (name.endsWith(suffix)) {
+      return tarBuffer.subarray(dataStart, dataStart + size);
+    }
+    offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  throw new Error(`Workflow 证据包中缺少 ${suffix}`);
+}
+
+function extractTarJson(archiveBuffer, suffix) {
+  return JSON.parse(extractTarEntry(archiveBuffer, suffix).toString("utf8"));
+}
+
+function listTarEntries(archiveBuffer) {
+  const tarBuffer = gunzipSync(archiveBuffer);
+  const names = [];
+  let offset = 0;
+  while (offset + 512 <= tarBuffer.length) {
+    const header = tarBuffer.subarray(offset, offset + 512);
+    if (header.every((value) => value === 0)) break;
+    const name = header.subarray(0, 100).toString("utf8").replace(/\0.*$/, "");
+    const sizeText = header.subarray(124, 136).toString("ascii").replace(/\0.*$/, "").trim();
+    const size = Number.parseInt(sizeText || "0", 8);
+    if (name) names.push(name);
+    offset += 512 + Math.ceil(size / 512) * 512;
+  }
+  return names;
+}
+
+function verifyEvidenceChecksums(archiveBuffer, requiredFiles) {
+  let expected = {};
+  try {
+    expected = extractTarJson(archiveBuffer, "SHA256SUMS.json");
+  } catch {
+    const lines = extractTarEntry(archiveBuffer, "SHA256SUMS")
+      .toString("utf8")
+      .trim()
+      .split(/\r?\n/);
+    expected = Object.fromEntries(lines.map((line) => {
+      const match = line.match(/^([a-fA-F0-9]{64})\s+\*?(.+)$/);
+      if (!match) throw new Error("SHA256SUMS 格式无效");
+      return [path.basename(match[2].trim()), match[1].toLowerCase()];
+    }));
+  }
+  const verifiedFiles = {};
+  for (const fileName of requiredFiles) {
+    const expectedDigest = String(expected[fileName] || "").toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(expectedDigest)) {
+      throw new Error(`证据校验清单缺少 ${fileName}`);
+    }
+    const actualDigest = createHash("sha256")
+      .update(extractTarEntry(archiveBuffer, fileName))
+      .digest("hex");
+    if (actualDigest !== expectedDigest) {
+      throw new Error(`证据文件 ${fileName} 的 SHA-256 校验失败`);
+    }
+    verifiedFiles[fileName] = actualDigest;
+  }
+  return { algorithm: "SHA-256", verified: true, files: verifiedFiles };
+}
+
+function findWorkflowArtifact(workflow, artifactName) {
+  for (const node of Object.values(workflow.status?.nodes || {})) {
+    const artifact = node?.outputs?.artifacts?.find((item) => item.name === artifactName);
+    if (artifact?.s3?.key) return artifact.s3.key;
+  }
+  return null;
+}
+
+async function updateArgoRun(run) {
+  if (
+    run.execution_mode !== "cube-studio-argo" ||
+    !["running", "starting", "interrupted", "canceling"].includes(run.status)
+  ) {
+    return false;
+  }
+  const workflow = await kubernetesClient.getWorkflow(
+    run.remote_workflow.namespace,
+    run.remote_workflow.name
+  );
+  const phase = workflow.status?.phase || "Pending";
+  const previous = `${run.status}:${run.progress}:${run.artifact_id || ""}`;
+  const now = new Date().toISOString();
+  run.remote_workflow.phase = phase;
+  run.remote_workflow.started_at = workflow.status?.startedAt || run.started_at;
+  run.remote_workflow.finished_at = workflow.status?.finishedAt || null;
+  run.updated_at = now;
+  delete run.interruption_reason;
+  delete run.last_sync_error;
+
+  if (["Pending", "Running"].includes(phase)) {
+    run.status = run.cancel_requested_at ? "canceling" : "running";
+    run.progress = phase === "Pending" ? 10 : 65;
+    run.container_states = run.container_states.map((state) => ({
       ...state,
-      status: index === 0 ? "failed" : "canceled"
+      status: run.cancel_requested_at ? "canceling" : phase === "Pending" ? "pulling" : "running"
+    }));
+  } else if (phase === "Succeeded") {
+    const artifactKey = findWorkflowArtifact(workflow, "closed-loop-evidence");
+    if (!artifactKey) throw new Error("Argo Workflow 成功，但未返回 closed-loop-evidence 产物");
+    const archive = await artifactStore.readWorkflowKey(artifactKey);
+    const isPhysicsSimulation = run.algorithms?.some(
+      (algorithm) => algorithm.evidence_kind === "physics-simulation"
+    );
+    const isRetailDigitalTwin = run.algorithms?.some(
+      (algorithm) => algorithm.evidence_kind === "retail-digital-twin"
+    );
+    let verified = false;
+    let evidencePayload;
+    let outcomeReason;
+
+    if (isRetailDigitalTwin) {
+      const retail = extractTarJson(archive, "retail-run.json");
+      const integrity = verifyEvidenceChecksums(archive, [
+        "retail-run.json",
+        "retail-store.pcd",
+        "retail-store.obj",
+        "navigation-trajectory.json",
+        "preview.png"
+      ]);
+      verified =
+        integrity.verified === true &&
+        retail.status === "succeeded" &&
+        retail.publishable === true &&
+        Object.values(retail.assertions || {}).every((value) => value === true);
+      evidencePayload = {
+        kind: "retail-digital-twin",
+        artifact_key: artifactKey,
+        validation_profile: retail.validation_profile,
+        full_stack_ready: retail.full_stack_ready === true,
+        input: retail.input,
+        scene: retail.scene,
+        perception: retail.perception,
+        task: retail.task,
+        navigation: retail.navigation,
+        manipulation: retail.manipulation,
+        assertions: retail.assertions,
+        blockers: retail.blockers || [],
+        runtime: retail.runtime,
+        integrity,
+        mesh_asset: { path: "retail-store.obj", format: "OBJ" },
+        preview_asset: { path: "preview.png", format: "PNG" }
+      };
+      const simulationTimestamp = workflow.status?.finishedAt || now;
+      const trustedMetric = (value, unit) => ({
+        value,
+        unit,
+        source: "retail-digital-twin-container",
+        timestamp: simulationTimestamp,
+        trustworthy: true
+      });
+      run.metrics = {
+        point_count: trustedMetric(retail.input?.point_count ?? null, "points"),
+        mesh_faces: trustedMetric(retail.scene?.mesh?.faces ?? null, "faces"),
+        navigation_path: trustedMetric(retail.navigation?.path_length_m ?? null, "m"),
+        perception_detections: trustedMetric(
+          retail.perception?.detection_count ?? null,
+          "objects"
+        ),
+        elapsed_time: trustedMetric(retail.runtime?.elapsed_ms ?? null, "ms")
+      };
+      outcomeReason = verified
+        ? `便利店传统闭环通过：${retail.input?.point_count || 0} 点、${retail.scene?.mesh?.faces || 0} 面、导航 ${retail.navigation?.path_length_m || 0} m；VLA 等待真实模型服务`
+        : "便利店点云重建、导航或传统抓取断言未通过";
+    } else if (isPhysicsSimulation) {
+      const simulation = extractTarJson(archive, "simulation-run.json");
+      const integrity = verifyEvidenceChecksums(archive, [
+        "simulation-run.json",
+        "trajectory.json",
+        "preview.png"
+      ]);
+      const renderedFrames = listTarEntries(archive)
+        .filter((name) => /(?:^|\/)frames\/frame-\d+\.png$/.test(name))
+        .sort();
+      verified =
+        integrity.verified === true &&
+        simulation.status === "succeeded" &&
+        simulation.publishable === true &&
+        Object.values(simulation.assertions || {}).every((value) => value === true);
+      evidencePayload = {
+        kind: "physics-simulation",
+        artifact_key: artifactKey,
+        engine: simulation.engine,
+        algorithm: simulation.algorithm,
+        scene: simulation.scene,
+        assertions: simulation.assertions,
+        metrics: simulation.metrics,
+        playback: simulation.playback,
+        rendered_frames: { count: renderedFrames.length, renderer: simulation.engine?.renderer },
+        runtime: simulation.runtime,
+        seed: simulation.seed,
+        integrity
+      };
+      const simulationTimestamp = workflow.status?.finishedAt || now;
+      const trustedMetric = (value, unit) => ({
+        value,
+        unit,
+        source: "bullet-physics-container",
+        timestamp: simulationTimestamp,
+        trustworthy: true
+      });
+      run.metrics = {
+        real_time_factor: trustedMetric(simulation.metrics?.real_time_factor ?? null, "x"),
+        final_position_error: trustedMetric(
+          simulation.metrics?.final_position_error_m ?? null,
+          "m"
+        ),
+        object_transfer_distance: trustedMetric(
+          simulation.metrics?.object_transfer_distance_m ?? null,
+          "m"
+        ),
+        collision_count: trustedMetric(simulation.metrics?.safety_contact_steps ?? null, "steps"),
+        sim_time: trustedMetric(simulation.metrics?.simulated_seconds ?? null, "s")
+      };
+      const distance = Number(simulation.metrics?.object_transfer_distance_m || 0).toFixed(3);
+      const errorMm = (Number(simulation.metrics?.final_position_error_m || 0) * 1000).toFixed(2);
+      outcomeReason = verified
+        ? `Bullet 物理闭环通过：工件搬运 ${distance} m，目标误差 ${errorMm} mm，高力碰撞 0 次`
+        : "Bullet 物理仿真的安全或目标断言未通过";
+    } else {
+      const barcodeEvidence = extractTarJson(archive, "closed-loop.json");
+      const algorithmResult = extractTarJson(archive, "result.json");
+      const integrity = verifyEvidenceChecksums(archive, [
+        "input.png",
+        "result.json",
+        "closed-loop.json"
+      ]);
+      verified =
+        integrity.verified === true &&
+        barcodeEvidence.closed_loop === true &&
+        String(barcodeEvidence.expected) === String(barcodeEvidence.detected?.text) &&
+        algorithmResult.status === "succeeded";
+      evidencePayload = {
+        kind: "barcode-recognition",
+        artifact_key: artifactKey,
+        expected_barcode: barcodeEvidence.expected,
+        detected_barcode: barcodeEvidence.detected?.text || null,
+        barcode_format: barcodeEvidence.detected?.format || null,
+        input_sha256: barcodeEvidence.input_sha256,
+        upstream_commit: barcodeEvidence.upstream_commit,
+        elapsed_ms: algorithmResult.elapsed_ms,
+        found: algorithmResult.found,
+        integrity
+      };
+      outcomeReason = verified
+        ? `真实容器识别成功：${barcodeEvidence.expected} → ${barcodeEvidence.detected?.text}`
+        : "条码识别结果与期望值不一致";
+    }
+    run.status = verified ? "completed" : "failed";
+    run.progress = 100;
+    run.finished_at = workflow.status?.finishedAt || now;
+    run.container_states = run.container_states.map((state) => ({
+      ...state,
+      status: verified ? "completed" : "failed"
+    }));
+    run.evidence = evidencePayload;
+    run.outcome = {
+      code: verified
+        ? isRetailDigitalTwin
+          ? "retail-digital-twin-baseline-succeeded"
+          : isPhysicsSimulation
+            ? "physics-simulation-succeeded"
+            : "cube-studio-closed-loop-succeeded"
+        : "cube-studio-assertion-failed",
+      validation_result: verified ? "passed" : "failed",
+      publishable: verified,
+      reason: outcomeReason
+    };
+    if (!run.artifact_id) {
+      const artifact = {
+        id: `artifact-${randomUUID()}`,
+        run_id: run.id,
+        name: `${run.remote_workflow.name}-${isRetailDigitalTwin ? "retail-digital-twin" : isPhysicsSimulation ? "physics" : "closed-loop"}-evidence.tgz`,
+        content_type: "application/gzip",
+        storage: {
+          provider: "cube-minio",
+          bucket: process.env.MINIO_BUCKET || "mlpipeline",
+          object_key: artifactKey,
+          size: archive.length
+        },
+        created_at: now
+      };
+      store.artifacts.push(artifact);
+      run.artifact_id = artifact.id;
+    }
+    appendRunEvent(
+      run,
+      verified ? "result" : "assertion_failed",
+      run.outcome.reason,
+      run.evidence
+    );
+  } else {
+    const canceledByUser = Boolean(run.cancel_requested_at);
+    run.status = canceledByUser ? "canceled" : "failed";
+    run.progress = 100;
+    run.finished_at = workflow.status?.finishedAt || now;
+    run.failure_reason = canceledByUser
+      ? "用户已通过平台停止真实 Argo Workflow"
+      : workflow.status?.message || `Argo Workflow ${phase}`;
+    run.container_states = run.container_states.map((state) => ({
+      ...state,
+      status: canceledByUser ? "canceled" : "failed"
     }));
     run.outcome = {
-      code: `synthetic-${faultMode}`,
-      validation_result: "rehearsal_assertion_failed",
+      code: canceledByUser ? "cube-studio-workflow-canceled" : "cube-studio-workflow-failed",
+      validation_result: canceledByUser ? "not_evaluated" : "failed",
       publishable: false,
       reason: run.failure_reason
     };
-    appendRunEvent(run, "assertion_failed", run.failure_reason, {
-      progress: nextProgress,
-      evidence_level: "synthetic",
-      seed: run.scenario?.seed
-    });
-    run.revision = Number(run.revision || 0) + 1;
-    return true;
+    appendRunEvent(run, canceledByUser ? "control" : "error", run.failure_reason, { phase });
   }
 
-  const milestones = [
-    [20, "perception", "合成传感器数据流已建立"],
-    [45, "planning", "合成路径事件已生成（非真实规划证据）"],
-    [70, "control", "合成轨迹控制事件正在推进"],
-    [100, "result", "编排演练完成；未执行物理仿真验收"]
-  ];
-  for (const [threshold, type, message] of milestones) {
-    if (previousProgress < threshold && nextProgress >= threshold) {
-      appendRunEvent(run, type, message, { progress: threshold, evidence_level: "synthetic" });
-    }
-  }
-
-  if (nextProgress >= 100) {
-    run.status = "completed";
-    run.progress = 100;
-    run.elapsed_ms = durationMs;
-    run.accumulated_ms = durationMs;
-    run.last_resumed_at = null;
-    run.finished_at = timestamp;
-    run.outcome = {
-      code: "orchestration-rehearsal-completed",
-      validation_result: "not_evaluated",
-      publishable: false,
-      reason: "该运行只产生合成数字孪生事件，未连接 ROS 2/Gazebo 执行器"
-    };
-    run.revision = Number(run.revision || 0) + 1;
-  }
-  return nextProgress !== previousProgress || run.status === "completed";
+  run.revision = Number(run.revision || 0) + 1;
+  return previous !== `${run.status}:${run.progress}:${run.artifact_id || ""}`;
 }
 
-function controlMockRun(run, action, expectedRevision) {
+async function refreshSimulationRun(run) {
+  if (run.execution_mode !== "cube-studio-argo") return false;
+  try {
+    return await updateArgoRun(run);
+  } catch (error) {
+    run.last_sync_error = error instanceof Error ? error.message : String(error);
+    run.updated_at = new Date().toISOString();
+    console.warn(`同步 Argo Workflow ${run.remote_workflow?.name || run.id} 失败，将自动重试:`, error);
+    return false;
+  }
+}
+
+async function hydratePhysicsPlayback(run) {
   if (
-    !Number.isInteger(expectedRevision) ||
-    expectedRevision !== Number(run.revision || 0)
+    run.evidence?.kind !== "physics-simulation" ||
+    run.evidence?.playback?.keyframes?.length ||
+    !run.evidence?.artifact_key
   ) {
-    return {
-      ok: false,
-      status: 409,
-      message: `运行版本冲突：当前 revision=${run.revision || 0}`
-    };
+    return;
   }
-  const nowMs = Date.now();
-  updateMockRun(run, nowMs);
-  const now = new Date(nowMs).toISOString();
-
-  if (action === "pause" && run.status === "running") {
-    run.status = "paused";
-    run.accumulated_ms = Number(run.elapsed_ms || 0);
-    run.last_resumed_at = null;
-    run.container_states = run.container_states.map((state) => ({ ...state, status: "paused" }));
-    appendRunEvent(run, "control", `运行已在 ${run.progress}% 暂停`);
-  } else if (action === "resume" && run.status === "paused") {
-    run.status = "running";
-    run.last_resumed_at = now;
-    run.container_states = run.container_states.map((state) => ({ ...state, status: "running" }));
-    appendRunEvent(run, "control", "运行已恢复");
-  } else if (action === "cancel" && ["running", "paused"].includes(run.status)) {
-    run.status = "canceled";
-    run.accumulated_ms = Number(run.elapsed_ms || 0);
-    run.last_resumed_at = null;
-    run.finished_at = now;
-    run.container_states = run.container_states.map((state) => ({ ...state, status: "canceled" }));
-    run.outcome = {
-      code: "canceled",
-      validation_result: "not_evaluated",
-      publishable: false
-    };
-    appendRunEvent(run, "control", "运行已取消");
-  } else {
-    return {
-      ok: false,
-      status: 409,
-      message: `状态 ${run.status} 不允许执行 ${action}`
-    };
-  }
-
-  run.updated_at = now;
-  run.revision = Number(run.revision || 0) + 1;
-  return { ok: true };
+  const archive = await artifactStore.readWorkflowKey(run.evidence.artifact_key);
+  const simulation = extractTarJson(archive, "simulation-run.json");
+  run.evidence.playback = simulation.playback;
 }
 
 function normalizeItem(collectionName, item) {
@@ -1249,8 +1754,8 @@ function getSession(request) {
   const token = header.startsWith("Bearer ") ? header.slice(7) : header;
   if (!token) return null;
   if (localSessions[token]) return localSessions[token];
-  // 直连 cube-studio 登录后，前端会把用户名放进 Authorization；适配层放行
-  if (token.length < 40) {
+  // 仅在显式启用受信任的 Cube Studio 反向代理时接受短用户名令牌。
+  if (process.env.TRUST_CUBE_STUDIO_SHORT_AUTH === "true" && cubeStudio.configured && token.length < 40) {
     return {
       username: token,
       role: token === "admin" ? "admin" : "viewer"
@@ -1323,7 +1828,7 @@ const server = http.createServer(async (request, response) => {
   const pathname = url.pathname;
 
   try {
-    if (pathname === "/health") {
+    if (pathname === "/health/live" || pathname === "/health") {
       sendJson(response, 200, {
         status: "ok",
         backend: "cube-studio-compatible-lite",
@@ -1332,12 +1837,34 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    if (pathname === "/health/ready") {
+      const [artifactHealth, kubernetesHealth] = await Promise.all([
+        artifactStore.health(),
+        kubernetesClient.health()
+      ]);
+      const ready = artifactHealth.reachable === true && kubernetesHealth.reachable === true;
+      sendJson(response, ready ? 200 : 503, {
+        status: ready ? "ready" : "not-ready",
+        dependencies: {
+          artifact_store: artifactHealth,
+          kubernetes: kubernetesHealth
+        },
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     if (pathname === "/login/" && request.method === "POST") {
       const body = await readBody(request);
+      const production = process.env.NODE_ENV === "production";
       const accounts = {
-        admin: "admin123",
-        demo: "demo123"
+        admin: process.env.LOCAL_ADMIN_PASSWORD || (production ? null : "admin123"),
+        demo: process.env.LOCAL_VIEWER_PASSWORD || (production ? null : "demo123")
       };
+      if (!accounts.admin && !accounts.demo) {
+        sendError(response, 503, "生产环境未配置本地登录凭据，请使用统一身份认证");
+        return;
+      }
       if (!accounts[body.username] || accounts[body.username] !== body.password) {
         sendError(response, 401, "用户名或密码错误");
         return;
@@ -1824,12 +2351,24 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       const resolution = resolveSimulationAlgorithms(requestedAlgorithms);
+      const pipeline = body.pipeline_id ? findItem(store.pipelines, body.pipeline_id) : null;
+      const bindingErrors = [...resolution.errors];
+      if (body.pipeline_id && !pipeline) {
+        bindingErrors.push("画布中选择的 Pipeline 不存在");
+      } else if (
+        pipeline?.algorithm_ids?.length &&
+        !resolution.algorithms.every((algorithm) =>
+          pipeline.algorithm_ids.some((id) => String(id) === String(algorithm.id))
+        )
+      ) {
+        bindingErrors.push("所选算法不属于当前画布绑定的 Pipeline");
+      }
       sendJson(response, 200, {
         result: buildCompatibilityReport(
           resolution.algorithms,
           body.scene || "warehouse",
           body.robot,
-          resolution.errors
+          bindingErrors
         )
       });
       return;
@@ -1868,7 +2407,35 @@ const server = http.createServer(async (request, response) => {
         : "none";
       const workflowName = body.workflow_name || "未命名仿真工作流";
       const scene = body.scene || "warehouse";
-      const runManifest = buildRunManifest({
+      const pipeline = body.pipeline_id ? findItem(store.pipelines, body.pipeline_id) : null;
+      if (body.pipeline_id && !pipeline) {
+        sendError(response, 404, "画布中选择的 Pipeline 不存在");
+        return;
+      }
+      if (
+        pipeline?.algorithm_ids?.length &&
+        !resolvedAlgorithms.every((algorithm) =>
+          pipeline.algorithm_ids.some((id) => String(id) === String(algorithm.id))
+        )
+      ) {
+        sendError(response, 422, "画布中的算法不属于所选 Pipeline");
+        return;
+      }
+      const workflowManifest =
+        pipeline?.workflow_manifest ||
+        resolvedAlgorithms.find((algorithm) => algorithm.workflow_manifest)?.workflow_manifest ||
+        null;
+      const isArgoWorkflow =
+        compatibility.execution_mode === "cube-studio-argo" && Boolean(workflowManifest);
+      if (!isArgoWorkflow) {
+        sendError(response, 422, "生产运行只接受绑定不可变 OCI 镜像的真实 Cube Studio / Argo Workflow");
+        return;
+      }
+      if (isArgoWorkflow && faultMode !== "none") {
+        sendError(response, 400, "真实 Cube Studio 闭环暂不支持页面故障注入，请选择“无故障注入”");
+        return;
+      }
+      const baseRunManifest = buildRunManifest({
         workflowName,
         scene,
         robot: registeredRobot,
@@ -1876,6 +2443,18 @@ const server = http.createServer(async (request, response) => {
         seed,
         faultMode
       });
+      const remoteWorkflow = await submitArgoWorkflow(workflowManifest);
+      const manifestSpec = {
+        ...baseRunManifest,
+        pipeline_id: pipeline?.id || null,
+        workflow_manifest: remoteWorkflow.manifest_path,
+        remote_workflow: remoteWorkflow
+      };
+      const { sha256: _ignoredManifestHash, ...manifestWithoutHash } = manifestSpec;
+      const runManifest = {
+        ...manifestWithoutHash,
+        sha256: createHash("sha256").update(JSON.stringify(manifestWithoutHash)).digest("hex")
+      };
       const run = {
         id: `sim-${randomUUID()}`,
         workflow_name: workflowName,
@@ -1891,13 +2470,15 @@ const server = http.createServer(async (request, response) => {
         run_manifest: runManifest,
         status: "running",
         progress: 0,
-        execution_mode: compatibility.execution_mode,
+        execution_mode: "cube-studio-argo",
         provider: {
-          id: "browser-orchestration-rehearsal",
-          label: "服务端确定性编排演练",
-          evidence_level: "synthetic",
-          capabilities: ["start", "pause", "resume", "cancel", "events"]
+          id: "cube-studio-argo",
+          label: "真实 Cube Studio / Argo Workflow",
+          evidence_level: "runtime-verified",
+          capabilities: ["start", "events", "artifact"]
         },
+        pipeline_id: pipeline?.id || null,
+        remote_workflow: remoteWorkflow,
         compatibility,
         container_states: resolvedAlgorithms.map((algorithm) => ({
           id: algorithm.id,
@@ -1906,27 +2487,26 @@ const server = http.createServer(async (request, response) => {
         })),
         started_at: now.toISOString(),
         updated_at: now.toISOString(),
-        last_resumed_at: now.toISOString(),
+        last_resumed_at: null,
         duration_ms: 12000,
         accumulated_ms: 0,
         elapsed_ms: 0,
         revision: 1,
         events: [],
-        metrics: {
-          rehearsal_rate: metric(0, "x", now.toISOString()),
-          collision_count: metric(null, "not_measured", now.toISOString()),
-          cpu_usage: metric(null, "not_measured", now.toISOString()),
-          memory_usage: metric(null, "not_measured", now.toISOString()),
-          sim_time: metric(0, "s", now.toISOString())
-        }
+        metrics: {}
       };
       appendRunEvent(run, "preflight", `严格接口预检通过，兼容性评分 ${compatibility.score}`);
-      appendRunEvent(run, "run", `已创建服务端权威运行 ${run.id}`);
+      appendRunEvent(
+        run,
+        "run",
+        `已提交真实 Cube Studio Argo Workflow ${remoteWorkflow.name}`,
+        { namespace: remoteWorkflow.namespace, uid: remoteWorkflow.uid }
+      );
       appendRunEvent(
         run,
         "evidence",
-        "当前 provider 只产生合成编排证据，不代表 ROS 2/Gazebo 算法验证",
-        { manifest_sha256: runManifest.sha256, seed, fault_mode: faultMode }
+        "将以容器运行结果、自动断言、SHA-256 校验和 MinIO 产物作为闭环证据",
+        { manifest_sha256: runManifest.sha256 }
       );
       store.simulationRuns.push(run);
       await persistStore();
@@ -1938,8 +2518,8 @@ const server = http.createServer(async (request, response) => {
       let shouldPersist = false;
       for (const run of store.simulationRuns) {
         const previousStatus = run.status;
-        const changed = updateMockRun(run);
-        if (changed && previousStatus !== run.status) shouldPersist = true;
+        const changed = await refreshSimulationRun(run);
+        if (changed || previousStatus !== run.status) shouldPersist = true;
       }
       if (shouldPersist) await persistStore();
       const statusFilter = url.searchParams.get("status");
@@ -1948,12 +2528,15 @@ const server = http.createServer(async (request, response) => {
         1,
         Math.min(100, Number.isFinite(requestedLimit) ? requestedLimit : 50)
       );
+      const productionRuns = store.simulationRuns.filter(
+        (run) => run.execution_mode === "cube-studio-argo"
+      );
       const filteredRuns = statusFilter
-        ? store.simulationRuns.filter((run) => run.status === statusFilter)
-        : store.simulationRuns;
+        ? productionRuns.filter((run) => run.status === statusFilter)
+        : productionRuns;
       sendJson(response, 200, {
         result: {
-          data: filteredRuns.slice().reverse().slice(0, limit),
+          data: filteredRuns.slice().reverse().slice(0, limit).map(compactRunForList),
           count: filteredRuns.length,
           limit
         }
@@ -1969,11 +2552,66 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       const previousStatus = run.status;
-      const changed = updateMockRun(run);
-      if (changed && previousStatus !== run.status) {
+      const changed = await refreshSimulationRun(run);
+      await hydratePhysicsPlayback(run);
+      if (changed || previousStatus !== run.status) {
         await persistStore();
       }
       sendJson(response, 200, { result: run });
+      return;
+    }
+
+    const simulationFrameMatch = pathname.match(
+      /^\/simulation\/runs\/([^/]+)\/frames\/(\d+)$/
+    );
+    if (simulationFrameMatch && request.method === "GET") {
+      const run = findItem(store.simulationRuns, decodeURIComponent(simulationFrameMatch[1]));
+      const frameIndex = Number(simulationFrameMatch[2]);
+      if (!run || run.evidence?.kind !== "physics-simulation" || !run.evidence?.artifact_key) {
+        sendError(response, 404, "物理渲染证据不存在");
+        return;
+      }
+      const frameCount = Number(run.evidence.rendered_frames?.count || 0);
+      if (!Number.isInteger(frameIndex) || frameIndex < 0 || frameIndex >= frameCount) {
+        sendError(response, 404, "物理渲染帧不存在");
+        return;
+      }
+      const archive = await artifactStore.readWorkflowKey(run.evidence.artifact_key);
+      const frame = extractTarEntry(
+        archive,
+        `frames/frame-${String(frameIndex).padStart(3, "0")}.png`
+      );
+      setCommonHeaders(response);
+      response.writeHead(200, {
+        "Content-Type": "image/png",
+        "Content-Length": frame.length,
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff"
+      });
+      response.end(frame);
+      return;
+    }
+
+    const retailAssetMatch = pathname.match(
+      /^\/simulation\/runs\/([^/]+)\/(scene-mesh|preview)$/
+    );
+    if (retailAssetMatch && request.method === "GET") {
+      const run = findItem(store.simulationRuns, decodeURIComponent(retailAssetMatch[1]));
+      if (!run || run.evidence?.kind !== "retail-digital-twin" || !run.evidence?.artifact_key) {
+        sendError(response, 404, "便利店数字孪生证据不存在");
+        return;
+      }
+      const isMesh = retailAssetMatch[2] === "scene-mesh";
+      const archive = await artifactStore.readWorkflowKey(run.evidence.artifact_key);
+      const asset = extractTarEntry(archive, isMesh ? "retail-store.obj" : "preview.png");
+      setCommonHeaders(response);
+      response.writeHead(200, {
+        "Content-Type": isMesh ? "text/plain; charset=utf-8" : "image/png",
+        "Content-Length": asset.length,
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff"
+      });
+      response.end(asset);
       return;
     }
 
@@ -1992,15 +2630,60 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       const body = await readBody(request);
-      if (!["pause", "resume", "cancel"].includes(body.action)) {
-        sendError(response, 400, "action 只能是 pause、resume 或 cancel");
+      if (body.action !== "cancel") {
+        sendError(response, 400, "真实 Workflow 当前只支持 cancel；暂停与恢复必须由算法检查点协议显式实现");
         return;
       }
-      const controlResult = controlMockRun(run, body.action, body.expected_revision);
-      if (!controlResult.ok) {
-        sendError(response, controlResult.status || 409, controlResult.message);
+      if (run.execution_mode !== "cube-studio-argo" || !run.remote_workflow?.name) {
+        sendError(response, 409, "平台不再支持合成运行控制，只能停止真实 Argo Workflow");
         return;
       }
+      if (
+        !Number.isInteger(body.expected_revision) ||
+        body.expected_revision !== Number(run.revision || 0)
+      ) {
+        sendError(response, 409, `运行版本冲突：当前 revision=${run.revision || 0}`);
+        return;
+      }
+      if (!["running", "starting", "interrupted"].includes(run.status)) {
+        sendError(response, 409, `状态 ${run.status} 不允许停止`);
+        return;
+      }
+      const liveWorkflow = await kubernetesClient.getWorkflow(
+        run.remote_workflow.namespace,
+        run.remote_workflow.name
+      );
+      if (!["Pending", "Running"].includes(liveWorkflow.status?.phase || "Pending")) {
+        await updateArgoRun(run);
+        await persistStore();
+        sendError(response, 409, `Workflow 已进入 ${liveWorkflow.status?.phase}，不能再终止`);
+        return;
+      }
+      await kubernetesClient.deleteWorkflow(
+        run.remote_workflow.namespace,
+        run.remote_workflow.name
+      );
+      const now = new Date().toISOString();
+      run.status = "canceled";
+      run.cancel_requested_at = now;
+      run.finished_at = now;
+      run.updated_at = now;
+      run.container_states = run.container_states.map((state) => ({
+        ...state,
+        status: "canceled"
+      }));
+      run.outcome = {
+        code: "cube-studio-workflow-canceled",
+        validation_result: "not_evaluated",
+        publishable: false,
+        reason: "用户已通过平台终止真实 Argo Workflow；未生成可发布证据"
+      };
+      appendRunEvent(run, "control", run.outcome.reason, {
+        namespace: run.remote_workflow.namespace,
+        workflow: run.remote_workflow.name,
+        propagation_policy: "Background"
+      });
+      run.revision = Number(run.revision || 0) + 1;
       await persistStore();
       sendJson(response, 200, { result: run });
       return;

@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-07-24T10:20:00.000Z",
+  "verified_at": "2026-08-13T06:00:00.000Z",
   "execution_notice": "目录中的镜像名是建议的内部构建目标。当前轻量后端只运行浏览器数字孪生适配器，不会拉取或执行第三方 Docker 镜像。",
   "sources": [
     {
@@ -182,6 +182,244 @@
           "/task_state": "rmf_task_msgs/msg/ApiResponse"
         },
         "color": "#ec4899"
+      }
+    },
+    {
+      "id": 108,
+      "catalog_key": "opencv-retail-dnn",
+      "name": "OpenCV DNN 商品区域检测",
+      "module": "便利店视觉",
+      "language": "C++ / Python",
+      "version": "4.x@21d60a9",
+      "author": "OpenCV Team",
+      "repository_url": "https://github.com/opencv/opencv",
+      "branch": "4.x",
+      "verified_commit": "21d60a9afeeb78b6a150ae3419df378e74a4ae21",
+      "license": "Apache-2.0",
+      "description": "基于 OpenCV DNN 的便利店货架与商品候选区域检测适配规格，为跟踪、盘点和缺货分析提供标准检测框。",
+      "simulation": {
+        "image": "catalog.local/retail/opencv-dnn:21d60a9",
+        "command": "python3 /opt/retail/detect_shelf.py --ros",
+        "runtime": "OpenCV 4.x / ROS 2",
+        "inputs": ["/camera/image_raw"],
+        "outputs": ["/retail/detections"],
+        "input_types": {
+          "/camera/image_raw": "sensor_msgs/msg/Image"
+        },
+        "output_types": {
+          "/retail/detections": "vision_msgs/msg/Detection2DArray"
+        },
+        "color": "#14b8a6"
+      }
+    },
+    {
+      "id": 109,
+      "catalog_key": "bytetrack-retail",
+      "name": "ByteTrack 顾客与商品跟踪",
+      "module": "便利店视觉",
+      "language": "Python / PyTorch",
+      "version": "main@d1bf019",
+      "author": "FoundationVision",
+      "repository_url": "https://github.com/FoundationVision/ByteTrack",
+      "branch": "main",
+      "verified_commit": "d1bf0191adff59bc8fcfeaa0b33d3d1642552a99",
+      "license": "MIT",
+      "description": "将检测框关联为稳定轨迹，用于便利店顾客流线、购物篮和商品移动的多目标跟踪演练。",
+      "simulation": {
+        "image": "catalog.local/retail/bytetrack:d1bf019",
+        "command": "python3 tools/demo_track.py stream --ros",
+        "runtime": "Python / PyTorch / ROS 2",
+        "inputs": ["/retail/detections"],
+        "outputs": ["/retail/tracks"],
+        "input_types": {
+          "/retail/detections": "vision_msgs/msg/Detection2DArray"
+        },
+        "output_types": {
+          "/retail/tracks": "vision_msgs/msg/Detection2DArray"
+        },
+        "color": "#f97316"
+      }
+    },
+    {
+      "id": 110,
+      "catalog_key": "paddleocr-shelf-label",
+      "name": "PaddleOCR 货架价签识别",
+      "module": "便利店视觉",
+      "language": "Python / PaddlePaddle",
+      "version": "main@2661c7c",
+      "author": "PaddlePaddle",
+      "repository_url": "https://github.com/PaddlePaddle/PaddleOCR",
+      "branch": "main",
+      "verified_commit": "2661c7c0ef5c613e8f93c6e93b2e052399f0f854",
+      "license": "Apache-2.0",
+      "description": "识别货架价签、促销牌和商品文本，为价格核验、陈列巡检和补货任务输出结构化文字结果。",
+      "simulation": {
+        "image": "catalog.local/retail/paddleocr:2661c7c",
+        "command": "paddleocr ocr -i /input/frame.jpg --device cpu",
+        "runtime": "Python / PaddlePaddle / ROS 2",
+        "inputs": ["/camera/image_raw"],
+        "outputs": ["/retail/ocr_results"],
+        "input_types": {
+          "/camera/image_raw": "sensor_msgs/msg/Image"
+        },
+        "output_types": {
+          "/retail/ocr_results": "std_msgs/msg/String"
+        },
+        "color": "#a855f7"
+      }
+    },
+    {
+      "id": 111,
+      "catalog_key": "moveit-task-constructor",
+      "name": "MoveIt Task Constructor 复合操作规划",
+      "module": "任务级操作规划",
+      "language": "C++ / ROS 2",
+      "version": "ros2@c411289",
+      "author": "MoveIt Maintainers / PickNik",
+      "repository_url": "https://github.com/moveit/moveit_task_constructor",
+      "branch": "ros2",
+      "verified_commit": "c411289d0bf3c9b223e3e5771a4cb3abc15fe3bb",
+      "license": "BSD-3-Clause",
+      "description": "将抓取、连接、搬运、放置等相互依赖的子任务组织为可解释的多阶段规划图，适合装配、拣选和上下料场景。",
+      "simulation": {
+        "image": "catalog.local/ros2/moveit-task-constructor:c411289",
+        "command": "ros2 launch moveit_task_constructor_demo demo.launch.py",
+        "runtime": "MoveIt 2 / ROS 2",
+        "inputs": ["/joint_states", "/planning_scene", "/task_goal"],
+        "outputs": ["/solution_sequence", "/display_planned_path"],
+        "input_types": {
+          "/joint_states": "sensor_msgs/msg/JointState",
+          "/planning_scene": "moveit_msgs/msg/PlanningScene",
+          "/task_goal": "moveit_task_constructor_msgs/msg/TaskDescription"
+        },
+        "output_types": {
+          "/solution_sequence": "moveit_task_constructor_msgs/msg/Solution",
+          "/display_planned_path": "moveit_msgs/msg/DisplayTrajectory"
+        },
+        "color": "#eab308"
+      }
+    },
+    {
+      "id": 112,
+      "catalog_key": "tesseract-planning",
+      "name": "Tesseract TrajOpt 工业轨迹优化",
+      "module": "工业运动规划",
+      "language": "C++ / Python",
+      "version": "master@4a45c3f",
+      "author": "Tesseract Robotics",
+      "repository_url": "https://github.com/tesseract-robotics/tesseract_planning",
+      "branch": "master",
+      "verified_commit": "4a45c3f601709eaefd3fda46fc14ae92ed84a5d3",
+      "license": "Apache-2.0",
+      "description": "面向焊接、喷涂、打磨和装配的笛卡尔路径与轨迹优化框架，可把工艺程序转换为满足碰撞和运动学约束的关节轨迹。",
+      "simulation": {
+        "image": "catalog.local/tesseract/tesseract-planning:4a45c3f",
+        "command": "python3 /opt/tesseract/run_task_composer.py --ros",
+        "runtime": "Tesseract / ROS 2",
+        "inputs": ["/joint_states", "/planning_environment", "/program"],
+        "outputs": ["/joint_trajectory", "/planning_diagnostics"],
+        "input_types": {
+          "/joint_states": "sensor_msgs/msg/JointState",
+          "/planning_environment": "tesseract_msgs/msg/Environment",
+          "/program": "tesseract_msgs/msg/CompositeInstruction"
+        },
+        "output_types": {
+          "/joint_trajectory": "trajectory_msgs/msg/JointTrajectory",
+          "/planning_diagnostics": "diagnostic_msgs/msg/DiagnosticArray"
+        },
+        "color": "#f97316"
+      }
+    },
+    {
+      "id": 113,
+      "catalog_key": "behaviortree-cpp",
+      "name": "BehaviorTree.CPP 任务行为编排",
+      "module": "任务编排与恢复",
+      "language": "C++17 / ROS 2",
+      "version": "master@c88a9f4",
+      "author": "BehaviorTree.CPP Maintainers",
+      "repository_url": "https://github.com/BehaviorTree/BehaviorTree.CPP",
+      "branch": "master",
+      "verified_commit": "c88a9f429a421b312599a07fa8902524b09bf90a",
+      "license": "MIT",
+      "description": "通过运行时 XML 行为树编排异步动作、并行监控、重试和故障恢复，可作为移动、感知和操作算法之上的任务层。",
+      "simulation": {
+        "image": "catalog.local/orchestration/behaviortree-cpp:c88a9f4",
+        "command": "bt_runner --tree /config/mission.xml --ros-args",
+        "runtime": "BehaviorTree.CPP / ROS 2",
+        "inputs": ["/task_request", "/behavior_events"],
+        "outputs": ["/task_state", "/behavior_trace"],
+        "input_types": {
+          "/task_request": "std_msgs/msg/String",
+          "/behavior_events": "diagnostic_msgs/msg/DiagnosticArray"
+        },
+        "output_types": {
+          "/task_state": "std_msgs/msg/String",
+          "/behavior_trace": "diagnostic_msgs/msg/DiagnosticArray"
+        },
+        "color": "#ec4899"
+      }
+    },
+    {
+      "id": 114,
+      "catalog_key": "open3d-registration",
+      "name": "Open3D 点云配准与三维质检",
+      "module": "三维感知与质检",
+      "language": "C++ / Python / CUDA",
+      "version": "main@aab533f",
+      "author": "Open3D Team",
+      "repository_url": "https://github.com/isl-org/Open3D",
+      "branch": "main",
+      "verified_commit": "aab533f300c5de61367478e500e078b1b93068b2",
+      "license": "MIT",
+      "description": "对深度相机或激光点云执行滤波、全局配准、ICP 精配准与距离分析，可用于尺寸检测、缺陷定位和数字孪生更新。",
+      "simulation": {
+        "image": "catalog.local/vision/open3d:aab533f",
+        "command": "python3 /opt/open3d/register_inspection.py --ros",
+        "runtime": "Open3D / ROS 2",
+        "inputs": ["/camera/depth/points", "/reference_cloud"],
+        "outputs": ["/inspection/transform", "/inspection/deviations"],
+        "input_types": {
+          "/camera/depth/points": "sensor_msgs/msg/PointCloud2",
+          "/reference_cloud": "sensor_msgs/msg/PointCloud2"
+        },
+        "output_types": {
+          "/inspection/transform": "geometry_msgs/msg/TransformStamped",
+          "/inspection/deviations": "sensor_msgs/msg/PointCloud2"
+        },
+        "color": "#06b6d4"
+      }
+    },
+    {
+      "id": 115,
+      "catalog_key": "rtabmap-3d-slam",
+      "name": "RTAB-Map RGB-D 三维建图",
+      "module": "三维定位与建图",
+      "language": "C++ / ROS 2",
+      "version": "master@f647014",
+      "author": "IntRoLab / Mathieu Labbé",
+      "repository_url": "https://github.com/introlab/rtabmap",
+      "branch": "master",
+      "verified_commit": "f647014f54cf3506f9b042a41972cc1540d0d3a4",
+      "license": "BSD-3-Clause",
+      "description": "融合 RGB-D、双目或激光和里程计完成实时闭环检测与三维地图构建，适用于门店盘点、园区巡检和仓储数字孪生。",
+      "simulation": {
+        "image": "catalog.local/ros2/rtabmap:f647014",
+        "command": "ros2 launch rtabmap_launch rtabmap.launch.py rgb_topic:=/camera/color depth_topic:=/camera/depth/image",
+        "runtime": "RTAB-Map / ROS 2",
+        "inputs": ["/camera/color", "/camera/depth/image", "/odom"],
+        "outputs": ["/mapData", "/cloud_map", "/rtabmap/localization_pose"],
+        "input_types": {
+          "/camera/color": "sensor_msgs/msg/Image",
+          "/camera/depth/image": "sensor_msgs/msg/Image",
+          "/odom": "nav_msgs/msg/Odometry"
+        },
+        "output_types": {
+          "/mapData": "rtabmap_msgs/msg/MapData",
+          "/cloud_map": "sensor_msgs/msg/PointCloud2",
+          "/rtabmap/localization_pose": "geometry_msgs/msg/PoseWithCovarianceStamped"
+        },
+        "color": "#8b5cf6"
       }
     }
   ]

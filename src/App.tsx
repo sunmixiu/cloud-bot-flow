@@ -4,18 +4,20 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { lazy, Suspense } from "react";
 import { MainLayout } from "./components/layout/MainLayout";
-import Index from "./pages/Index";
-import ResourceManagement from "./pages/ResourceManagement";
-import RealtimeMonitoring from "./pages/RealtimeMonitoring";
-import PerformanceReports from "./pages/PerformanceReports";
-import RobotTraining from "./pages/RobotTraining";
-import RobotViewer from "./pages/RobotViewer";
-import AlgorithmLibrary from "./pages/AlgorithmLibrary";
-import SimulationLab from "./pages/SimulationLab";
-import BuildPipeline from "./pages/BuildPipeline";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+
+const Index = lazy(() => import("./pages/Index"));
+const ResourceManagement = lazy(() => import("./pages/ResourceManagement"));
+const RealtimeMonitoring = lazy(() => import("./pages/RealtimeMonitoring"));
+const PerformanceReports = lazy(() => import("./pages/PerformanceReports"));
+const RobotTraining = lazy(() => import("./pages/RobotTraining"));
+const RobotViewer = lazy(() => import("./pages/RobotViewer"));
+const AlgorithmLibrary = lazy(() => import("./pages/AlgorithmLibrary"));
+const SimulationLab = lazy(() => import("./pages/SimulationLab"));
+const BuildPipeline = lazy(() => import("./pages/BuildPipeline"));
+const Login = lazy(() => import("./pages/Login"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <Suspense fallback={<div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">正在加载平台模块…</div>}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="*" element={
@@ -60,6 +63,7 @@ const App = () => {
                 </RequireAuth>
               } />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

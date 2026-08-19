@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloud-bot-flow.local/schemas/apriltag-localization-1.0.0.json",
+  "title": "AprilTag localization evidence",
+  "type": "object",
+  "required": ["schema_version", "status", "publishable", "input", "algorithm", "camera", "detection", "pose", "assertions", "runtime", "seed"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "status": { "enum": ["succeeded", "failed"] },
+    "publishable": { "type": "boolean" },
+    "input": {
+      "type": "object",
+      "required": ["mode", "sha256", "width", "height", "production_camera_ready"],
+      "properties": {
+        "mode": { "enum": ["real-camera-image", "deterministic-validation-fixture"] },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "production_camera_ready": { "type": "boolean" }
+      }
+    },
+    "algorithm": { "type": "object" },
+    "camera": { "type": "object" },
+    "detection": {
+      "type": "object",
+      "required": ["count", "id", "hamming", "decision_margin", "center_px", "corners_lb_rb_rt_lt_px"]
+    },
+    "pose": {
+      "type": "object",
+      "required": ["translation_m", "rotation_vector", "euler_xyz_deg", "camera_distance_m", "reprojection_error_px"]
+    },
+    "assertions": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "runtime": { "type": "object" },
+    "seed": { "type": "integer" },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

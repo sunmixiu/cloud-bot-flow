@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { lazy, Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -7,9 +7,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { algorithmApi, pipelineApi, resourceApi, API_CONFIG } from "@/services/api";
+import { algorithmApi, pipelineApi, resourceApi, simulationAlgorithmApi, API_CONFIG } from "@/services/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AIDesignDialog, type RobotConfig } from "./AIDesignDialog";
+import type { RobotConfig } from "./AIDesignDialog";
 import { 
   Bot, 
   Cpu, 
@@ -25,6 +25,11 @@ import {
   HelpCircle,
   ChevronRight
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+const AIDesignDialog = lazy(() => import("./AIDesignDialog").then((module) => ({
+  default: module.AIDesignDialog,
+})));
 
 interface WorkflowNode {
   id: string;
@@ -45,8 +50,54 @@ interface Connection {
 interface ComponentType {
   type: "task" | "robot" | "algorithm";
   name: string;
-  icon: any;
+  icon: LucideIcon;
   category: string;
+  project?: string;
+}
+
+interface PipelineAsset {
+  id: string | number;
+  name: string;
+  pipeline_url: string;
+}
+
+interface TelemetryReference {
+  url?: string;
+  topic?: string;
+  m3u8?: string;
+}
+
+interface RobotAsset {
+  id: string | number;
+  name: string;
+  battery?: TelemetryReference;
+  speed?: TelemetryReference;
+  position_topic?: TelemetryReference;
+  vision?: {
+    head?: TelemetryReference;
+    left_hand?: TelemetryReference;
+    right_hand?: TelemetryReference;
+    obstacle?: TelemetryReference;
+  };
+  end_effector_force_topic?: TelemetryReference;
+  joint_angles_topic?: TelemetryReference;
+}
+
+interface AlgorithmAsset {
+  id: string | number;
+  name: string;
+  description?: string;
+  describe?: string;
+  command?: string;
+  entrypoint?: string;
+  image?: string;
+  images_url?: string;
+  module?: string;
+  project?: { id: string | number; name: string };
+}
+
+interface ListResponse<T> {
+  result?: { data?: T[] };
 }
 
 const getNodeIcon = (type: string) => {
@@ -82,9 +133,9 @@ export function WorkflowCanvas() {
   const [connectionDragPos, setConnectionDragPos] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [robots, setRobots] = useState<any[]>([]);
-  const [algorithms, setAlgorithms] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<PipelineAsset[]>([]);
+  const [robots, setRobots] = useState<RobotAsset[]>([]);
+  const [algorithms, setAlgorithms] = useState<AlgorithmAsset[]>([]);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     tasks: true,
     robots: true,
@@ -101,61 +152,58 @@ export function WorkflowCanvas() {
   useEffect(() => {
     const loadComponents = async () => {
       try {
-        const [tasksResponse, robotsData, algorithmsResponse] = await Promise.all([
+        const [tasksResponse, robotsData, workflowAlgorithmsResponse, simulationAlgorithmsResponse] = await Promise.all([
           pipelineApi.getList(),
           resourceApi.getRobots(),
-          algorithmApi.getList()
+          algorithmApi.getList(),
+          simulationAlgorithmApi.getList()
         ]);
 
         // API返回的数据结构是 { result: { data: [...] } }
-        const tasksData = (tasksResponse as any).result?.data || [];
-        const algorithmsList = (algorithmsResponse as any).result?.data || [];
-
-        // 遍历每个算法ID获取详细信息
-        const detailedAlgorithms = await Promise.all(
-          algorithmsList.map(async (algo: any) => {
-            try {
-              const detailResponse = await algorithmApi.getById(algo.id);
-              const detail = (detailResponse as any).result;
-              return {
-                id: detail.id,
-                name: detail.name,
-                describe: detail.describe,
-                created_on: detail.created_on,
-                changed_on: detail.changed_on,
-                entrypoint: detail.entrypoint,
-                dockerfile: detail.dockerfile,
-                gitpath: detail.gitpath,
-                project: detail.project
-              };
-            } catch (error) {
-              console.error(`Failed to load algorithm ${algo.id}:`, error);
-              return null;
-            }
-          })
+        const tasksData = (tasksResponse as ListResponse<PipelineAsset>).result?.data || [];
+        const workflowAlgorithms = (workflowAlgorithmsResponse as ListResponse<AlgorithmAsset>).result?.data || [];
+        const simulationAlgorithms = (simulationAlgorithmsResponse as ListResponse<AlgorithmAsset>).result?.data || [];
+        const workflowById = new Map(
+          workflowAlgorithms.map((algorithm) => [String(algorithm.id), algorithm])
         );
-
-        // 过滤掉加载失败的算法
-        const validAlgorithms = detailedAlgorithms.filter(algo => algo !== null);
+        const simulationIds = new Set(simulationAlgorithms.map((algorithm) => String(algorithm.id)));
+        const normalizedSimulationAlgorithms = simulationAlgorithms.map((algorithm): AlgorithmAsset => {
+          const workflowAlgorithm = workflowById.get(String(algorithm.id));
+          return {
+            ...workflowAlgorithm,
+            ...algorithm,
+            describe: algorithm.description || workflowAlgorithm?.describe || algorithm.name,
+            entrypoint: algorithm.command || workflowAlgorithm?.entrypoint,
+            images_url: algorithm.image || workflowAlgorithm?.images_url,
+            project: workflowAlgorithm?.project || {
+              id: `module-${algorithm.module || "uncategorized"}`,
+              name: algorithm.module || "未分类",
+            },
+          };
+        });
+        const validAlgorithms = [
+          ...normalizedSimulationAlgorithms,
+          ...workflowAlgorithms.filter((algorithm) => !simulationIds.has(String(algorithm.id))),
+        ];
 
         setTasks(tasksData);
         setRobots(robotsData);
         setAlgorithms(validAlgorithms);
 
         const components: ComponentType[] = [
-          ...tasksData.map((task: any) => ({
+          ...tasksData.map((task) => ({
             type: "task" as const,
             name: task.name,
             icon: ListTodo,
             category: "任务"
           })),
-          ...robotsData.map((robot: any) => ({
+          ...(robotsData as RobotAsset[]).map((robot) => ({
             type: "robot" as const,
             name: robot.name,
             icon: Bot,
             category: "机器人"
           })),
-          ...validAlgorithms.map((algo: any) => ({
+          ...validAlgorithms.map((algo) => ({
             type: "algorithm" as const,
             name: algo.name,
             icon: algo.name === 'AI-Design' ? Brain : Cpu,
@@ -193,7 +241,7 @@ export function WorkflowCanvas() {
     }
     acc[projectId].algorithms.push(algo);
     return acc;
-  }, {} as Record<string, { projectName: string; algorithms: any[] }>);
+  }, {} as Record<string, { projectName: string; algorithms: AlgorithmAsset[] }>);
 
   const handleComponentDragStart = useCallback((
     e: React.DragEvent,
@@ -217,17 +265,33 @@ export function WorkflowCanvas() {
     const x = e.clientX - rect.left - 100; // offset to center the node
     const y = e.clientY - rect.top - 50;
 
-    const newNode: WorkflowNode = {
-      id: `${draggedComponentType}-${Date.now()}`,
-      type: draggedComponentType as WorkflowNode['type'],
-      name: draggedComponentName,
-      ...(draggedServiceName && { serviceName: draggedServiceName }),
-      ...(draggedAssetId !== null && { assetId: draggedAssetId }),
-      x: Math.max(0, x),
-      y: Math.max(0, y),
-    };
-
-    setNodes(prev => [...prev, newNode]);
+    setNodes((previous) => {
+      let nextX = Math.max(0, x);
+      let nextY = Math.max(0, y);
+      const canvasWidth = canvasRef.current?.clientWidth || 900;
+      let attempts = 0;
+      while (
+        attempts < 12 &&
+        previous.some((node) => Math.abs(node.x - nextX) < 174 && Math.abs(node.y - nextY) < 72)
+      ) {
+        nextX += 218;
+        if (nextX + 192 > canvasWidth) {
+          nextX = 24 + (attempts % 2) * 28;
+          nextY += 112;
+        }
+        attempts += 1;
+      }
+      const newNode: WorkflowNode = {
+        id: `${draggedComponentType}-${Date.now()}`,
+        type: draggedComponentType as WorkflowNode['type'],
+        name: draggedComponentName,
+        ...(draggedServiceName && { serviceName: draggedServiceName }),
+        ...(draggedAssetId !== null && { assetId: draggedAssetId }),
+        x: nextX,
+        y: nextY,
+      };
+      return [...previous, newNode];
+    });
     setDraggedComponentType(null);
     setDraggedComponentName(null);
     setDraggedServiceName(null);
@@ -634,6 +698,7 @@ export function WorkflowCanvas() {
       };
       const simulationData = {
         name: workflowTasks.map(node => toPlainText(node.name)).join(" + ") || "机器人算法工作流",
+        pipelineId: workflowTasks[0]?.assetId,
         algorithms: algorithmOrder.map(node => ({
           id: node.id,
           assetId: node.assetId,
@@ -699,7 +764,7 @@ export function WorkflowCanvas() {
                 <div
                   key={`task-${task.id || index}`}
                   draggable
-                  onDragStart={(e) => handleComponentDragStart(e, 'task', task.pipeline_url )}
+                  onDragStart={(e) => handleComponentDragStart(e, 'task', task.pipeline_url, task.name, task.id)}
                   className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-accent cursor-grab active:cursor-grabbing transition-colors"
                 >
                   <ListTodo className="h-4 w-4 text-primary" />
@@ -740,10 +805,10 @@ export function WorkflowCanvas() {
               <span className="text-sm font-medium">算法</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-1 mt-1 ml-4">
-              {Object.entries(algorithmsByProject).map(([projectId, projectData]: [string, any]) => (
+              {Object.entries(algorithmsByProject).map(([projectId, projectData]) => (
                 <Collapsible 
                   key={projectId}
-                  open={openAlgoProjects[projectId]}
+                  open={Boolean(openAlgoProjects[projectId])}
                   onOpenChange={() => toggleAlgoProject(projectId)}
                 >
                   <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-accent/50 rounded-lg transition-colors">
@@ -751,7 +816,7 @@ export function WorkflowCanvas() {
                     <span className="text-xs font-medium text-muted-foreground">{projectData.projectName}</span>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="space-y-1 mt-1 ml-4">
-                    {projectData.algorithms.map((algo: any, index: number) => {
+                    {projectData.algorithms.map((algo, index) => {
                       const AlgoIcon = algo.name === 'AI-Design' ? Brain : Cpu;
                       return (
                         <div
@@ -760,14 +825,14 @@ export function WorkflowCanvas() {
                           onDragStart={(e) => handleComponentDragStart(
                             e,
                             'algorithm',
-                            algo.describe || `算法-${algo.id}`,
+                            algo.name || `算法-${algo.id}`,
                             algo.name,
                             algo.id,
                           )}
                           className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-accent cursor-grab active:cursor-grabbing transition-colors"
                         >
                           <AlgoIcon className="h-4 w-4 text-primary" />
-                          <span className="text-sm">{algo.describe}</span>
+                          <span className="truncate text-sm" title={algo.describe || algo.name}>{algo.name}</span>
                         </div>
                       );
                     })}
@@ -846,10 +911,10 @@ export function WorkflowCanvas() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>确认生成仿真草稿</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              将先检查工作流拓扑并生成仿真草稿；此操作不会部署容器，随后进入机器人仿真实验室完成严格预检。
-                            </AlertDialogDescription>
+                            <AlertDialogTitle>确认生成生产运行草稿</AlertDialogTitle>
+                        <AlertDialogDescription>
+                              将先检查工作流拓扑和真实资产绑定，再进入运行实验室完成严格预检；启动时会提交到 Cube Studio / Argo。
+                        </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>取消</AlertDialogCancel>
@@ -1124,7 +1189,7 @@ export function WorkflowCanvas() {
           <AlertDialogHeader>
             <AlertDialogTitle>正在执行工作流</AlertDialogTitle>
             <AlertDialogDescription>
-              请稍候，正在检查拓扑并生成仿真草稿...
+              请稍候，正在检查拓扑并生成生产运行草稿...
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
@@ -1153,11 +1218,15 @@ export function WorkflowCanvas() {
       </AlertDialog>
 
       {/* AI Design Dialog */}
-      <AIDesignDialog
-        open={aiDesignDialogOpen}
-        onOpenChange={setAiDesignDialogOpen}
-        onSave={handleSaveRobotConfig}
-      />
+      {aiDesignDialogOpen && (
+        <Suspense fallback={null}>
+          <AIDesignDialog
+            open={aiDesignDialogOpen}
+            onOpenChange={setAiDesignDialogOpen}
+            onSave={handleSaveRobotConfig}
+          />
+        </Suspense>
+      )}
 
       {/* Brain Assembly Dialog */}
       <Dialog open={brainAssemblyDialogOpen} onOpenChange={setBrainAssemblyDialogOpen}>

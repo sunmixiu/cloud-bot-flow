@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   CheckCircle2,
@@ -99,7 +99,7 @@ export default function AlgorithmLibrary() {
   const [form, setForm] = useState(initialForm);
   const { toast } = useToast();
 
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     try {
       const [codeResponse, simulationResponse] = await Promise.all([
         codeRepositoryApi.getList(),
@@ -115,11 +115,11 @@ export default function AlgorithmLibrary() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadAssets();
-  }, []);
+  }, [loadAssets]);
 
   const moduleCount = useMemo(
     () => new Set(codeModules.map((item) => item.module)).size,

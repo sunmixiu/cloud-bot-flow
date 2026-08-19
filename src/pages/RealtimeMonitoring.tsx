@@ -5,7 +5,7 @@ import { API_CONFIG } from "@/services/api";
 
 export default function RealtimeMonitoring() {
   const location = useLocation();
-  const monitoringData = (location.state as any)?.monitoringData;
+  const monitoringData = (location.state as { monitoringData?: unknown } | null)?.monitoringData;
 
   // 构建带参数的 iframe URL
   const iframeUrl = useMemo(() => {

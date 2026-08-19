@@ -18,6 +18,9 @@ backend/data.json.tmp
 .playwright-cli/
 .playwright-mcp/
 output/
+algorithm/**/evidence/
+algorithm/**/__pycache__/
+algorithm/**/*.pyc
 
 # Editor directories and files
 .vscode/*

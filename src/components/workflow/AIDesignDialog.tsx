@@ -66,6 +66,24 @@ interface RobotPart {
   xmlPath?: string;
 }
 
+interface RobotPartParameters {
+  length?: number;
+  velocity?: number;
+  mass?: number;
+  load?: number;
+  dofs?: number;
+}
+
+interface RobotImagePayload {
+  robot_id: string;
+  name?: string;
+  description?: string;
+  xml_path: string;
+  url?: string;
+  arm_parameters?: RobotPartParameters;
+  base_parameters?: RobotPartParameters;
+}
+
 interface RobotDataCache {
   [robotId: string]: {
     imageUrl: string;
@@ -329,7 +347,8 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
 
   const handleGenerateLocalParts = async (type: 'upper' | 'lower') => {
     const isUpper = type === 'upper';
-    isUpper ? setIsLoadingUpperBody(true) : setIsLoadingLowerBody(true);
+    if (isUpper) setIsLoadingUpperBody(true);
+    else setIsLoadingLowerBody(true);
     setSelectedUpperBodyForAssemble(null);
     setSelectedLowerBodyForAssemble(null);
     setAssembledRobot(null);
@@ -343,7 +362,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
         params: isUpper ? partParams.upperBody : partParams.lowerBody,
       });
       const rawParts = response.result?.parts || [];
-      const parts: RobotPart[] = rawParts.map((rawPart: any) => {
+      const parts: RobotPart[] = (rawParts as RobotImagePayload[]).map((rawPart) => {
         const values = isUpper ? rawPart.arm_parameters : rawPart.base_parameters;
         return {
           id: rawPart.robot_id,
@@ -386,7 +405,8 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
       console.error("Local robot part generation failed:", error);
       toast.error("本地部件生成失败");
     } finally {
-      isUpper ? setIsLoadingUpperBody(false) : setIsLoadingLowerBody(false);
+      if (isUpper) setIsLoadingUpperBody(false);
+      else setIsLoadingLowerBody(false);
     }
   };
 
@@ -633,7 +653,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
 
   const subscribeRobotImages = (
     client: MqttClient, 
-    callback: (imageData: any) => void, 
+    callback: (imageData: RobotImagePayload) => void,
     mode: 'generate' | 'combine' | null,
     promisesRef?: React.MutableRefObject<Promise<void>[]>
   ) => {
@@ -657,7 +677,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
             const fetchPromise = (async () => {
               try {
                 const imageUrl = await fetchAndCacheImage(data.robot_id, data.xml_path);
-                const imageDataWithUrl = {
+                const imageDataWithUrl: RobotImagePayload = {
                   ...data,
                   url: imageUrl,
                   arm_parameters: data.arm_parameters,
@@ -708,7 +728,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
     };
   };
 
-  const subscribeRobotIds = (client: MqttClient, callback: (robotIds: any[]) => void) => {
+  const subscribeRobotIds = (client: MqttClient, callback: (robotIds: string[]) => void) => {
     client.subscribe(MQTT_TOPICS.robotIds, { qos: 1 }, (error) => {
       if (error) {
         console.error('订阅机器人ID列表失败:', error);
@@ -723,7 +743,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
           const data = JSON.parse(message.toString());
           console.log('收到机器人ID列表:', data);
           if (Array.isArray(data)) {
-            callback(data);
+            callback(data.filter((value): value is string => typeof value === 'string'));
           }
         } catch (error) {
           console.error('解析机器人ID列表数据失败:', error);
@@ -1140,7 +1160,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
       }
 
       // 订阅拼接结果（监听robotImage topic）
-      const assemblePromise = new Promise<any>((resolve, reject) => {
+      const assemblePromise = new Promise<RobotImagePayload>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error("拼接超时"));
         }, 30000);
@@ -1156,7 +1176,7 @@ export function AIDesignDialog({ open, onOpenChange, onSave }: AIDesignDialogPro
             if (topic === MQTT_TOPICS.robotImage) {
               clearTimeout(timeout);
               try {
-                const robotData = JSON.parse(message.toString());
+                const robotData = JSON.parse(message.toString()) as RobotImagePayload;
                 console.log('收到拼接机器人数据:', robotData);
                 client.off('message', messageHandler);
                 client.unsubscribe(MQTT_TOPICS.robotImage);

@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: retail-apriltag-localization-
+  namespace: pipeline
+  labels:
+    cloud-bot-flow.io/algorithm: retail-apriltag-localization
+    cloud-bot-flow.io/test: perception-pose-baseline
+spec:
+  serviceAccountName: pipeline-runner
+  entrypoint: detect-estimate-verify
+  archiveLogs: true
+  activeDeadlineSeconds: 300
+  ttlStrategy:
+    secondsAfterCompletion: 86400
+  arguments:
+    parameters:
+      - name: image
+        value: IMAGE_PLACEHOLDER
+      - name: seed
+        value: "20260819"
+  templates:
+    - name: detect-estimate-verify
+      container:
+        image: "{{workflow.parameters.image}}"
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -eu
+            mkdir -p /tmp/evidence
+            python -m retail_apriltag.run --output /tmp/evidence --seed "{{workflow.parameters.seed}}"
+            test "$(python -c 'import json; print(json.load(open("/tmp/evidence/apriltag-localization.json"))["status"])')" = "succeeded"
+            test "$(python -c 'import json; print(all(json.load(open("/tmp/evidence/apriltag-localization.json"))["assertions"].values()))')" = "True"
+            echo "APRILTAG_LOCALIZATION_CLOSED_LOOP_OK"
+        resources:
+          requests:
+            cpu: "250m"
+            memory: 256Mi
+          limits:
+            cpu: "2"
+            memory: 1Gi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+          - name: runtime-tmp
+            mountPath: /tmp
+      outputs:
+        artifacts:
+          - name: closed-loop-evidence
+            path: /tmp/evidence
+            archive:
+              tar:
+                compressionLevel: 1
+  volumes:
+    - name: runtime-tmp
+      emptyDir:
+        sizeLimit: 256Mi

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export interface Resource {
   id: string;
   name: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface EditResourceDialogProps {

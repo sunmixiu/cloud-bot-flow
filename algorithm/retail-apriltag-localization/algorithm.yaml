@@ -1,0 +1,34 @@
+apiVersion: cloud-bot-flow.io/v1alpha1
+kind: AlgorithmPackage
+metadata:
+  name: retail-apriltag-localization
+  version: 1.0.0
+spec:
+  category: perception/localization
+  displayName: 便利店 AprilTag 货架工位定位
+  upstream:
+    repository: https://github.com/AprilRobotics/apriltag
+    tag: v3.4.5
+    commit: 94be783968e5091bcc9972c72c84fd63efce2935
+    license: BSD-2-Clause
+  runtime:
+    entrypoint: python -m retail_apriltag.run
+    user: 10001
+    cpu: "1"
+    memory: 512Mi
+  input:
+    image: image/png
+    cameraIntrinsics: object
+    tagSizeMeters: number
+  output:
+    result: schemas/output.schema.json
+    preview: image/png
+    checksums: application/json
+  validation:
+    fixture: fixture://retail-aisle-03-apriltag-v1
+    assertions:
+      - expected_tag_detected
+      - decision_margin_at_least_40
+      - hamming_distance_at_most_1
+      - pose_reprojection_error_below_3px
+      - positive_camera_depth

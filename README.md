@@ -4,6 +4,13 @@
 
 ## 快速启动
 
+Windows 上已经完成过本地 Docker/kind 环境初始化时，可以直接双击
+[`start-cloud-bot-flow.bat`](start-cloud-bot-flow.bat)。电脑关机再开机后，该脚本会启动
+Docker Desktop、恢复 Registry/kind、启动两套 MinIO、构建并启动网站。命令行运行时可传入
+`--no-browser` 禁止自动打开浏览器。
+
+也可以手动执行：
+
 ```powershell
 npm install
 npm run minio:up
@@ -54,6 +61,9 @@ npm run dev:all
 
 算法库与真实仿真平台的生产化设计见
 [`docs/algorithm-simulation-platform.md`](docs/algorithm-simulation-platform.md)。
+
+零基础页面说明、3 条已跑通闭环的逐步操作、验收证据和术语表见
+[`docs/closed-loop-user-guide.md`](docs/closed-loop-user-guide.md)。
 
 镜像构建、Pipeline 与 MinIO 的配置和证据边界见
 [`docs/cube-studio-platform.md`](docs/cube-studio-platform.md)。

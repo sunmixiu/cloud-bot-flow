@@ -120,6 +120,14 @@ interface Dataset {
   download_url_html: string;
 }
 
+interface ApiListResponse<T> {
+  result?: { data?: T[] };
+}
+
+interface ApiDetailResponse<T> {
+  result: T;
+}
+
 
 export default function ResourceManagement() {
   const [activeTab, setActiveTab] = useState("robots");
@@ -156,20 +164,20 @@ export default function ResourceManagement() {
         setRobots(robotsData as Robot[]);
         
         // 处理任务数据 - 从API响应中提取data数组
-        const tasksData = (tasksResponse as any).result?.data || [];
+        const tasksData = (tasksResponse as ApiListResponse<Task>).result?.data || [];
         setTasks(tasksData as Task[]);
         
         // 处理数据集数据 - 从API响应中提取data数组
-        const datasetsData = (datasetsResponse as any).result?.data || [];
+        const datasetsData = (datasetsResponse as ApiListResponse<Dataset>).result?.data || [];
         setDatasets(datasetsData as Dataset[]);
         
         // 处理算法数据 - 遍历每个算法ID获取详细信息
-        const algorithmsList = (algorithmsResponse as any).result?.data || [];
+        const algorithmsList = (algorithmsResponse as ApiListResponse<Algorithm>).result?.data || [];
         const detailedAlgorithms = await Promise.all(
-          algorithmsList.map(async (algo: any) => {
+          algorithmsList.map(async (algo) => {
             try {
               const detailResponse = await algorithmApi.getById(algo.id);
-              const detail = (detailResponse as any).result;
+              const detail = (detailResponse as ApiDetailResponse<Algorithm>).result;
               return {
                 id: detail.id,
                 name: detail.name,
@@ -259,7 +267,7 @@ export default function ResourceManagement() {
 
   const handleSave = async (resource: Resource) => {
     try {
-      let savedResource: any = resource;
+      let savedResource: Resource | Robot | Task | Algorithm | Dataset = resource;
       switch (selectedResourceType) {
         case "robots": {
           const response = await resourceApi.update(resource.id, resource);
@@ -302,7 +310,7 @@ export default function ResourceManagement() {
 
   const handleAdd = async (type: "robots" | "tasks" | "algorithms" | "datasets", resource: Resource) => {
     try {
-      let createdResource: any = resource;
+      let createdResource: Resource | Robot | Task | Algorithm | Dataset = resource;
       switch (type) {
         case "robots": {
           const response = await resourceApi.create(resource);

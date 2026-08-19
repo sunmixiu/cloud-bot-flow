@@ -98,7 +98,7 @@ const Login = () => {
           <CardDescription className="text-center">
             请输入您的用户名和密码
             <span className="mt-2 block text-xs">
-              cube-studio 账号：admin / admin
+              本地验收账号：admin / admin123
             </span>
           </CardDescription>
         </CardHeader>
