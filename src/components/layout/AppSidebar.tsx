@@ -8,7 +8,8 @@ import {
   Box,
   Boxes,
   FlaskConical,
-  CloudCog
+  CloudCog,
+  Rocket
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -43,6 +44,11 @@ const mainNavItems = [
     title: "镜像与 Pipeline",
     url: "/build-pipeline",
     icon: CloudCog
+  },
+  {
+    title: "算法快速部署",
+    url: "/quick-deployment",
+    icon: Rocket
   },
   {
     title: "仿真实验室",

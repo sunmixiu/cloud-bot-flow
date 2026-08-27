@@ -1,0 +1,5 @@
+{
+  "insecure-registries": [
+    "<平台电脑局域网IP>:5002"
+  ]
+}

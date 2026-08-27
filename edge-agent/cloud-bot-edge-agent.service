@@ -1,0 +1,21 @@
+[Unit]
+Description=Cloud Bot Flow Edge Agent
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=-/etc/cloud-bot-flow-edge/bootstrap.env
+Environment=ROS_LOG_DIR=/var/lib/cloud-bot-flow-edge/ros-log
+ExecStart=/usr/bin/python3 /opt/cloud-bot-flow-edge/cloud_bot_edge_agent.py --config /etc/cloud-bot-flow-edge/agent.json serve
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/cloud-bot-flow-edge
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

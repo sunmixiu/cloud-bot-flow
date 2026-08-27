@@ -67,7 +67,15 @@ interface SimulationAlgorithm {
   repository_url?: string;
   image_status?: string;
   verified_commit?: string;
+  execution_adapter?: string;
+  workflow_manifest?: string;
 }
+
+const isRunnableSimulationAsset = (algorithm: SimulationAlgorithm) =>
+  algorithm.status === "ready" &&
+  algorithm.execution_adapter === "cube-studio-argo-workflow" &&
+  algorithm.image.includes("@sha256:") &&
+  Boolean(algorithm.workflow_manifest);
 
 const initialForm = {
   name: "",
@@ -244,9 +252,7 @@ export default function AlgorithmLibrary() {
           <CardContent className="p-5">
             <PackageCheck className="mb-3 h-5 w-5 text-emerald-400" />
             <div className="text-2xl font-bold">
-              {simulationAlgorithms.filter(
-                (item) => item.status === "ready" || item.status === "verified-source",
-              ).length}
+              {simulationAlgorithms.filter(isRunnableSimulationAsset).length}
             </div>
             <p className="text-sm text-muted-foreground">可数字孪生验证</p>
           </CardContent>
@@ -282,15 +288,25 @@ export default function AlgorithmLibrary() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="min-h-10 text-sm text-muted-foreground">{module.description}</p>
-                  <a
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 font-mono text-xs hover:border-primary/50"
-                    href={module.repository_url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="truncate">{module.repository_url}</span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                  </a>
+                  {/^(?:https?):\/\//i.test(module.repository_url) ? (
+                    <a
+                      className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 font-mono text-xs hover:border-primary/50"
+                      href={module.repository_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="truncate">{module.repository_url}</span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    </a>
+                  ) : (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 font-mono text-xs text-muted-foreground"
+                      title="内部仓库或本地工作区地址，不能作为浏览器链接打开"
+                    >
+                      <span className="truncate">{module.repository_url}</span>
+                      <Code2 className="h-3.5 w-3.5 shrink-0" />
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2">
                       <GitBranch className="h-4 w-4 text-muted-foreground" />
@@ -346,9 +362,17 @@ export default function AlgorithmLibrary() {
                             {algorithm.module} · {algorithm.version}
                           </p>
                         </div>
-                        <Badge className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/15">
+                        <Badge className={algorithm.status === "quarantined"
+                          ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/15"
+                          : isRunnableSimulationAsset(algorithm)
+                            ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/15"
+                            : "bg-slate-500/15 text-slate-300 hover:bg-slate-500/15"}>
                           <CheckCircle2 className="mr-1 h-3 w-3" />
-                          {algorithm.status === "verified-source" ? "源码已验证" : "本地可运行"}
+                          {algorithm.status === "quarantined"
+                            ? "隔离验收"
+                            : algorithm.status === "verified-source"
+                              ? "源码已验证"
+                              : isRunnableSimulationAsset(algorithm) ? "真实 Pipeline 可运行" : "规格待接入"}
                         </Badge>
                       </div>
                       <p className="mt-3 text-sm text-muted-foreground">{algorithm.description}</p>
@@ -370,7 +394,7 @@ export default function AlgorithmLibrary() {
                           <Badge key={topic} variant="secondary">OUT {topic}</Badge>
                         ))}
                       </div>
-                      {algorithm.repository_url && (
+                      {algorithm.repository_url && /^https?:\/\//i.test(algorithm.repository_url) && (
                         <a
                           href={algorithm.repository_url}
                           target="_blank"

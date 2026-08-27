@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -33,8 +33,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PhysicsKeyframe } from "@/components/simulation/PhysicsSimulationViewport";
+import MappingQualificationViewport from "@/components/simulation/MappingQualificationViewport";
+import VisualEvidenceViewport from "@/components/simulation/VisualEvidenceViewport";
 import { useToast } from "@/hooks/use-toast";
-import { platformApi, resourceApi, simulationAlgorithmApi, simulationApi } from "@/services/api";
+import { buildApiUrl, getAuthHeaders, platformApi, resourceApi, simulationAlgorithmApi, simulationApi } from "@/services/api";
 import "./SimulationLab.css";
 
 const PhysicsSimulationViewport = lazy(() => import("@/components/simulation/PhysicsSimulationViewport"));
@@ -59,6 +61,7 @@ interface SimulationAlgorithm {
   image_status?: string;
   execution_adapter?: string;
   workflow_manifest?: string;
+  evidence_kind?: "barcode-recognition" | "physics-simulation" | "retail-digital-twin" | "image-edge-detection" | "ocr-recognition" | "image-classification" | "mapping-runtime-qualification";
 }
 
 interface Robot {
@@ -99,6 +102,8 @@ type SimulationStatus =
 
 interface CompatibilityReport {
   runnable: boolean;
+  qualification_only?: boolean;
+  publishable_candidate?: boolean;
   score: number;
   execution_mode: string;
   evidence_level: string;
@@ -156,7 +161,7 @@ interface SimulationRun {
     reason?: string;
   };
   evidence?: {
-    kind?: "barcode-recognition" | "physics-simulation" | "retail-digital-twin";
+    kind?: "barcode-recognition" | "physics-simulation" | "retail-digital-twin" | "image-edge-detection" | "ocr-recognition" | "image-classification" | "mapping-runtime-qualification";
     artifact_key: string;
     expected_barcode?: string;
     detected_barcode?: string;
@@ -175,6 +180,10 @@ interface SimulationRun {
       final_position_error_m?: number;
       object_transfer_distance_m?: number;
       safety_contact_steps?: number;
+      width_px?: number;
+      height_px?: number;
+      edge_mean?: number;
+      radius?: number;
     };
     playback?: { keyframe_count?: number; keyframes?: PhysicsKeyframe[] };
     rendered_frames?: { count?: number; renderer?: string };
@@ -202,8 +211,32 @@ interface SimulationRun {
       vla?: { status?: string; required?: string[] };
     };
     blockers?: string[];
+    publishable?: boolean;
+    required_fix?: string[];
+    runtime?: {
+      declared_platform?: string;
+      container_arch?: string;
+      payload_binary_arch?: string;
+      python_version?: string;
+      ros2_available?: boolean;
+      numpy_available?: boolean;
+    };
+    delivery?: {
+      source_file_count?: number;
+      model_path?: string;
+      model_bytes?: number;
+      dataset_count?: number;
+    };
+    probe?: { started?: boolean; exit_code?: number | null; error?: string | null; output?: string };
     mesh_asset?: { path?: string; format?: string };
     preview_asset?: { path?: string; format?: string };
+    input_asset?: { path?: string; format?: string };
+    edge_asset?: { path?: string; format?: string };
+    visual_assets?: {
+      input?: { path?: string; format?: string; source?: string } | null;
+      output?: { path?: string; format?: string; source?: string } | null;
+    };
+    assets?: Array<{ name?: string; path?: string; type?: string }>;
     integrity?: { algorithm?: string; verified?: boolean };
   };
 }
@@ -278,6 +311,14 @@ export default function SimulationLab() {
   const [runHistory, setRunHistory] = useState<SimulationRun[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [visualEvidenceImages, setVisualEvidenceImages] = useState<{
+    input?: string;
+    output?: string;
+    error?: string;
+    loading?: boolean;
+  }>({});
+  const visualEvidenceObjectUrls = useRef<string[]>([]);
+  const [visualEvidenceReload, setVisualEvidenceReload] = useState(0);
 
   const workflow = useMemo<SimulationWorkflow>(() => {
     const stateWorkflow = (location.state as { simulationData?: SimulationWorkflow } | null)?.simulationData;
@@ -367,6 +408,7 @@ export default function SimulationLab() {
       .filter(Boolean) as SimulationAlgorithm[],
     [algorithms, selectedAlgorithmIds],
   );
+  const hasQualificationAsset = selectedAlgorithms.some((algorithm) => algorithm.status === "quarantined");
 
   const selectedRobot = useMemo(
     () => robots.find((robot) => String(robot.id) === selectedRobotId),
@@ -453,6 +495,58 @@ export default function SimulationLab() {
       void loadRunHistory();
     }
   }, [loadRunHistory, status]);
+
+  useEffect(() => {
+    const evidenceKind = runSnapshot?.evidence?.kind;
+    const isVisualEvidence = evidenceKind === "image-edge-detection" || evidenceKind === "barcode-recognition" || evidenceKind === "ocr-recognition" || evidenceKind === "image-classification";
+    if (!isVisualEvidence || !runSnapshot?.id) {
+      setVisualEvidenceImages({});
+      return undefined;
+    }
+
+    const abortController = new AbortController();
+    setVisualEvidenceImages({ loading: true });
+    const hasInput = Boolean(runSnapshot.evidence?.visual_assets?.input?.path) || evidenceKind === "image-edge-detection" || evidenceKind === "barcode-recognition";
+    const hasOutput = Boolean(runSnapshot.evidence?.visual_assets?.output?.path) || evidenceKind === "image-edge-detection";
+    const loadImage = async (slot: "input" | "output") => {
+      const endpoint = evidenceKind === "image-edge-detection" ? `edge-${slot}` : `visual-${slot}`;
+      const response = await fetch(buildApiUrl(`/simulation/runs/${encodeURIComponent(runSnapshot.id)}/${endpoint}`), {
+        headers: getAuthHeaders(),
+        signal: abortController.signal,
+      });
+      if (!response.ok) throw new Error(`${slot === "input" ? "输入" : "输出"}证据图片返回 ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      return url;
+    };
+
+    void Promise.all([
+      hasInput ? loadImage("input") : Promise.resolve(undefined),
+      hasOutput ? loadImage("output") : Promise.resolve(undefined),
+    ]).then(([input, output]) => {
+      const nextUrls = [input, output].filter((url): url is string => Boolean(url));
+      if (abortController.signal.aborted) {
+        nextUrls.forEach((url) => URL.revokeObjectURL(url));
+        return;
+      }
+      visualEvidenceObjectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      visualEvidenceObjectUrls.current = nextUrls;
+      setVisualEvidenceImages({ input, output, loading: false });
+    }).catch((error) => {
+      if (abortController.signal.aborted) return;
+      console.error("加载二维视觉运行证据图片失败", error);
+      setVisualEvidenceImages({ error: error instanceof Error ? error.message : "未知错误", loading: false });
+    });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [visualEvidenceReload, runSnapshot?.evidence?.kind, runSnapshot?.evidence?.visual_assets, runSnapshot?.id]);
+
+  useEffect(() => () => {
+    visualEvidenceObjectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    visualEvidenceObjectUrls.current = [];
+  }, []);
 
   const compositionLocked = ["validating", "running", "canceling", "paused"].includes(status);
   const isProductionAsset = (algorithm: SimulationAlgorithm) =>
@@ -612,9 +706,13 @@ export default function SimulationLab() {
       setCompatibility(report);
       setStatus(report.runnable ? "idle" : "failed");
       toast({
-        title: report.runnable ? "运行前检查通过" : "运行前检查未通过",
+        title: report.runnable
+          ? report.qualification_only ? "隔离验收可提交" : "运行前检查通过"
+          : "运行前检查未通过",
         description: report.runnable
-          ? `兼容性评分 ${report.score}，镜像摘要、接口与场景均可提交`
+          ? report.qualification_only
+            ? `兼容性评分 ${report.score}，只允许运行资格验收；验收完成不代表算法可上线`
+            : `兼容性评分 ${report.score}，镜像摘要、接口与场景均可提交`
           : report.errors[0] || "存在阻断问题",
         variant: report.runnable ? "default" : "destructive",
       });
@@ -789,6 +887,37 @@ export default function SimulationLab() {
 
   const isPhysicsEvidence = runSnapshot?.evidence?.kind === "physics-simulation";
   const isRetailEvidence = runSnapshot?.evidence?.kind === "retail-digital-twin";
+  const isImageEdgeEvidence = runSnapshot?.evidence?.kind === "image-edge-detection";
+  const isBarcodeEvidence = runSnapshot?.evidence?.kind === "barcode-recognition";
+  const isMappingQualificationEvidence = runSnapshot?.evidence?.kind === "mapping-runtime-qualification";
+  const visualEvidenceKinds = new Set(["image-edge-detection", "barcode-recognition", "ocr-recognition", "image-classification"]);
+  const threeDimensionalEvidenceKinds = new Set(["physics-simulation", "retail-digital-twin"]);
+  const isTwoDimensionalVisualAlgorithm = (algorithm: SimulationAlgorithm) => {
+    if (algorithm.evidence_kind === "mapping-runtime-qualification") return false;
+    if (algorithm.evidence_kind && visualEvidenceKinds.has(algorithm.evidence_kind)) return true;
+    if (algorithm.evidence_kind && threeDimensionalEvidenceKinds.has(algorithm.evidence_kind)) return false;
+    const descriptor = [algorithm.name, algorithm.module, algorithm.catalog_key, ...algorithm.inputs, ...algorithm.outputs].join(" ");
+    if (/导航|避障|SLAM|建图|点云|mesh|数字孪生|物理|机械臂|抓取|moveit|运动规划/i.test(descriptor)) return false;
+    return /边缘|OCR|分类|条码|图像识别|image|camera|vision|detect|class/i.test(descriptor);
+  };
+  const isThreeDimensionalAlgorithm = (algorithm: SimulationAlgorithm) => {
+    if (algorithm.evidence_kind === "mapping-runtime-qualification") return false;
+    if (algorithm.evidence_kind && threeDimensionalEvidenceKinds.has(algorithm.evidence_kind)) return true;
+    const descriptor = [algorithm.name, algorithm.module, algorithm.catalog_key, ...algorithm.inputs, ...algorithm.outputs].join(" ");
+    return /导航|避障|SLAM|建图|点云|mesh|数字孪生|物理|机械臂|抓取|moveit|运动规划/i.test(descriptor);
+  };
+  const selectedVisualAlgorithm = selectedAlgorithms.find(isTwoDimensionalVisualAlgorithm);
+  const selectedThreeDimensionalAlgorithm = selectedAlgorithms.find(isThreeDimensionalAlgorithm);
+  const selectedMappingQualificationAlgorithm = selectedAlgorithms.find(
+    (algorithm) => algorithm.evidence_kind === "mapping-runtime-qualification",
+  );
+  const isMappingQualificationTask = isMappingQualificationEvidence || Boolean(selectedMappingQualificationAlgorithm);
+  const isImageEdgeTask = isImageEdgeEvidence || selectedVisualAlgorithm?.evidence_kind === "image-edge-detection" || /边缘|edge/i.test(selectedVisualAlgorithm?.name || "");
+  const showVisualEvidenceViewport = isImageEdgeEvidence || isBarcodeEvidence || Boolean(selectedVisualAlgorithm);
+  const showMappingQualificationViewport = isMappingQualificationEvidence || Boolean(selectedMappingQualificationAlgorithm);
+  const showThreeDimensionalViewport =
+    !showMappingQualificationViewport &&
+    (isPhysicsEvidence || isRetailEvidence || (!showVisualEvidenceViewport && Boolean(selectedThreeDimensionalAlgorithm)));
   const workflowStep = status === "completed"
     ? 4
     : status === "running" || status === "canceling" || status === "paused" || status === "validating" || compatibility?.runnable
@@ -816,17 +945,19 @@ export default function SimulationLab() {
             从不可变算法资产到可校验证据的一站式工作台，只提交真实 Cube Studio Pipeline。
           </p>
           <div className={`mt-3 flex max-w-3xl items-start gap-2 rounded-lg border px-3 py-2 text-xs ${
-            isActualRun
+            isActualRun && !hasQualificationAsset
               ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
               : "border-amber-500/25 bg-amber-500/10 text-amber-300"
           }`}>
-            {isActualRun ? (
+            {isActualRun && !hasQualificationAsset ? (
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
             ) : (
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             )}
             {isActualRun
-              ? "当前任务将提交真实 Cube Studio / Argo Workflow，并以容器断言和 MinIO 产物作为闭环证据。"
+              ? hasQualificationAsset
+                ? "当前任务只会提交隔离资格验收 Workflow；在容器断言全部通过前，不会将该镜像标记为可上线算法。"
+                : "当前任务将提交真实 Cube Studio / Argo Workflow，并以容器断言和 MinIO 产物作为闭环证据。"
               : "尚未形成可运行链：请从工作流画布选择真实 Pipeline、机器人和已构建算法资产。"}
           </div>
         </div>
@@ -858,7 +989,7 @@ export default function SimulationLab() {
               disabled={!usesRealPipeline || status === "validating"}
             >
               <Play className="mr-2 h-4 w-4" />
-              {status === "validating" ? "正在预检" : "运行真实 Pipeline"}
+              {status === "validating" ? "正在预检" : hasQualificationAsset ? "运行隔离验收" : "运行真实 Pipeline"}
             </Button>
           )}
           {status === "running" && isActualRun && (
@@ -942,7 +1073,7 @@ export default function SimulationLab() {
             </div>
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/40 p-1">
               {([
-                ["actual", "可运行"],
+                ["actual", "可提交"],
                 ["retail", "便利店"],
                 ["all", "全部"],
               ] as const).map(([value, label]) => (
@@ -1005,7 +1136,9 @@ export default function SimulationLab() {
                             <span className="truncate text-sm font-semibold">{algorithm.name}</span>
                             <span
                               className={`h-2 w-2 rounded-full ${
-                                algorithm.status === "verified-source"
+                                algorithm.status === "quarantined"
+                                  ? "bg-amber-400"
+                                  : algorithm.status === "verified-source"
                                   ? "bg-amber-400"
                                   : "bg-emerald-400"
                               }`}
@@ -1015,7 +1148,7 @@ export default function SimulationLab() {
                           <div className="mt-1.5 flex flex-wrap items-center gap-1">
                             <Badge variant="outline" className="px-1.5 py-0 text-[9px]">
                               {canRun
-                                ? "真实 Pipeline"
+                                ? algorithm.status === "quarantined" ? "隔离验收" : "真实 Pipeline"
                                 : algorithm.status === "verified-source"
                                   ? "源码已验证 · 待构建"
                                   : "本地镜像"}
@@ -1025,7 +1158,7 @@ export default function SimulationLab() {
                                 {algorithm.license}
                               </Badge>
                             )}
-                            {algorithm.repository_url && (
+                            {algorithm.repository_url && /^https?:\/\//i.test(algorithm.repository_url) && (
                               <a
                                 href={algorithm.repository_url}
                                 target="_blank"
@@ -1049,7 +1182,11 @@ export default function SimulationLab() {
                                 addAlgorithm(algorithm.id);
                               }}
                             >
-                              {isSelected ? "已加入" : canAdd ? "加入运行链" : canRun ? "未绑定" : "待构建"}
+                              {isSelected
+                                ? "已加入"
+                                : canAdd
+                                  ? algorithm.status === "quarantined" ? "加入验收链" : "加入运行链"
+                                  : canRun ? "未绑定" : "待构建"}
                             </Button>
                           </div>
                         </div>
@@ -1234,22 +1371,34 @@ export default function SimulationLab() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <MonitorPlay className="h-4 w-4" />
-                  {selectedScenario?.label || "运行场景"}
+                  {showMappingQualificationViewport
+                    ? `${selectedMappingQualificationAlgorithm?.name || runSnapshot?.evidence?.algorithm?.name || "建图交付镜像"} · 运行时验收`
+                    : showVisualEvidenceViewport
+                    ? `${selectedVisualAlgorithm?.name || runSnapshot?.evidence?.algorithm?.name || "二维视觉算法"} · 证据视图`
+                    : showThreeDimensionalViewport
+                      ? selectedScenario?.label || "三维运行场景"
+                      : "运行证据视图"}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">
-                    {isRetailEvidence
+                    {showMappingQualificationViewport
+                      ? "架构 · ROS 2 · 依赖 · 数据集"
+                      : showVisualEvidenceViewport
+                      ? "原始输入 · 算法结果 · 局部放大"
+                      : isRetailEvidence
                       ? "点云 Mesh · A* 轨迹证据"
                       : isPhysicsEvidence
                       ? "Bullet 物理轨迹 · WebGL 遥测回放"
-                      : isActualRun
-                        ? "运行拓扑 · 真实容器证据"
-                        : "等待真实运行证据"}
+                      : showThreeDimensionalViewport
+                        ? "三维遥测 · 仅展示真实证据"
+                        : "等待可识别的运行证据"}
                   </Badge>
                   <Badge
                     className={
                       status === "completed"
-                        ? "bg-emerald-500/15 text-emerald-400"
+                        ? runSnapshot?.outcome?.publishable === false
+                          ? "bg-amber-500/15 text-amber-300"
+                          : "bg-emerald-500/15 text-emerald-400"
                         : status === "running"
                           ? "bg-blue-500/15 text-blue-400"
                             : status === "failed"
@@ -1262,7 +1411,9 @@ export default function SimulationLab() {
                     }
                   >
                     {status === "completed"
-                      ? "运行完成"
+                      ? runSnapshot?.outcome?.publishable === false
+                        ? "验收阻断"
+                        : "运行完成"
                       : status === "running"
                         ? "运行中"
                         : status === "paused"
@@ -1281,16 +1432,45 @@ export default function SimulationLab() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Suspense fallback={<div className="grid min-h-[520px] place-items-center text-sm text-muted-foreground">正在加载 WebGL 遥测查看器…</div>}>
-                <PhysicsSimulationViewport
-                  sceneId={selectedScene}
-                  runId={runSnapshot?.id}
+              {showMappingQualificationViewport ? (
+                <MappingQualificationViewport
                   status={status}
-                  robotModel={selectedRobot?.model}
+                  algorithmName={selectedMappingQualificationAlgorithm?.name || runSnapshot?.evidence?.algorithm?.name}
+                  image={selectedMappingQualificationAlgorithm?.image || runSnapshot?.algorithms?.find((algorithm) => algorithm.evidence_kind === "mapping-runtime-qualification")?.image}
                   evidence={runSnapshot?.evidence}
-                  pose={runSnapshot?.pose}
                 />
-              </Suspense>
+              ) : showVisualEvidenceViewport ? (
+                <VisualEvidenceViewport
+                  key={runSnapshot?.id || selectedVisualAlgorithm?.id || "visual-evidence"}
+                  status={status}
+                  algorithmName={selectedVisualAlgorithm?.name || runSnapshot?.evidence?.algorithm?.name}
+                  evidence={runSnapshot?.evidence}
+                  inputUrl={visualEvidenceImages.input}
+                  outputUrl={visualEvidenceImages.output}
+                  loading={visualEvidenceImages.loading}
+                  error={visualEvidenceImages.error}
+                  onRetry={() => setVisualEvidenceReload((value) => value + 1)}
+                />
+              ) : showThreeDimensionalViewport ? (
+                <Suspense fallback={<div className="grid min-h-[520px] place-items-center text-sm text-muted-foreground">正在加载 WebGL 遥测查看器…</div>}>
+                  <PhysicsSimulationViewport
+                    sceneId={selectedScene}
+                    runId={runSnapshot?.id}
+                    status={status}
+                    robotModel={selectedRobot?.model}
+                    evidence={runSnapshot?.evidence}
+                    pose={runSnapshot?.pose}
+                  />
+                </Suspense>
+              ) : (
+                <div className="grid min-h-[520px] place-items-center bg-[#07101c] px-6 text-center text-sm text-slate-400">
+                  <div className="max-w-lg">
+                    <PackageSearch className="mx-auto h-10 w-10 text-slate-500" />
+                    <p className="mt-4 font-medium text-slate-200">当前算法尚未声明可用的证据查看器</p>
+                    <p className="mt-2 leading-6">平台不会使用货架、机器人动画或伪造指标填充此区域。请在算法描述中声明二维图像证据，或提供三维遥测、点云 Mesh、物理关键帧等真实产物。</p>
+                  </div>
+                </div>
+              )}
               <div className="border-t p-4">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>{isActualRun ? "Cube Studio Workflow 进度" : "尚未提交真实 Pipeline"}</span>
@@ -1321,14 +1501,24 @@ export default function SimulationLab() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg border bg-muted/20 p-3">
                     <p className="text-xs text-muted-foreground">容器状态</p>
-                    <p className={`mt-1 text-lg font-bold ${status === "completed" ? "text-emerald-400" : ""}`}>
-                      {status === "completed" ? "断言通过" : status === "running" ? "运行中" : "等待执行"}
+                    <p className={`mt-1 text-lg font-bold ${status === "completed" ? runSnapshot?.outcome?.publishable === false ? "text-amber-400" : "text-emerald-400" : ""}`}>
+                      {status === "completed"
+                        ? runSnapshot?.outcome?.publishable === false
+                          ? "兼容性阻断"
+                          : "断言通过"
+                        : status === "running" ? "运行中" : "等待执行"}
                     </p>
                   </div>
                   <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs text-muted-foreground">{isRetailEvidence ? "Mesh 面数" : isPhysicsEvidence ? "目标误差" : "识别数量"}</p>
+                    <p className="text-xs text-muted-foreground">{isMappingQualificationTask ? "容器 / 二进制" : isImageEdgeTask ? "图像尺寸" : isRetailEvidence ? "Mesh 面数" : isPhysicsEvidence ? "目标误差" : "识别数量"}</p>
                     <p className="mt-1 text-lg font-bold">
-                      {isRetailEvidence
+                      {isMappingQualificationTask
+                        ? `${runSnapshot?.evidence?.runtime?.container_arch || "—"} / ${runSnapshot?.evidence?.runtime?.payload_binary_arch || "—"}`
+                        : isImageEdgeTask
+                        ? runSnapshot?.evidence?.metrics?.width_px && runSnapshot?.evidence?.metrics?.height_px
+                          ? `${runSnapshot.evidence.metrics.width_px} × ${runSnapshot.evidence.metrics.height_px}`
+                          : "—"
+                        : isRetailEvidence
                         ? runSnapshot?.evidence?.scene?.mesh?.faces?.toLocaleString() ?? "—"
                         : isPhysicsEvidence
                         ? runSnapshot?.evidence?.metrics?.final_position_error_m != null
@@ -1338,9 +1528,15 @@ export default function SimulationLab() {
                     </p>
                   </div>
                   <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs text-muted-foreground">{isRetailEvidence ? "导航路径" : isPhysicsEvidence ? "实时因子" : "算法耗时"}</p>
+                    <p className="text-xs text-muted-foreground">{isMappingQualificationTask ? "上线阻断项" : isImageEdgeTask ? "边缘均值" : isRetailEvidence ? "导航路径" : isPhysicsEvidence ? "实时因子" : "算法耗时"}</p>
                     <p className="mt-1 text-lg font-bold">
-                      {isRetailEvidence
+                      {isMappingQualificationTask
+                        ? `${runSnapshot?.evidence?.blockers?.length || 0} 项`
+                        : isImageEdgeTask
+                        ? runSnapshot?.evidence?.metrics?.edge_mean != null
+                          ? runSnapshot.evidence.metrics.edge_mean.toFixed(4)
+                          : "—"
+                        : isRetailEvidence
                         ? runSnapshot?.evidence?.navigation?.path_length_m != null
                           ? `${runSnapshot.evidence.navigation.path_length_m.toFixed(3)} m`
                           : "—"
@@ -1438,6 +1634,8 @@ export default function SimulationLab() {
                         className={
                           log.includes("[result]")
                             ? "text-emerald-400"
+                            : log.includes("[qualification_blocked]")
+                              ? "text-amber-300"
                             : log.includes("[error]") || log.includes("[assertion_failed]")
                               ? "text-red-400"
                               : log.includes("[preflight]")
@@ -1466,19 +1664,41 @@ export default function SimulationLab() {
 
           {status === "completed" && (
             <div className={`rounded-xl border p-4 text-sm md:col-span-2 xl:col-span-1 ${
-              isActualRun
+              runSnapshot?.outcome?.publishable === false
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
+                : isActualRun
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
                 : "border-blue-500/30 bg-blue-500/10 text-blue-200"
             }`}>
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                {runSnapshot?.outcome?.publishable === false
+                  ? <AlertTriangle className="h-5 w-5 shrink-0" />
+                  : <CheckCircle2 className="h-5 w-5 shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">
                   {runSnapshot?.outcome?.reason || "真实 Cube Studio 闭环验证通过。"}
                   </p>
                   {runSnapshot?.evidence && (
-                    <div className="mt-3 space-y-2 rounded-lg border border-emerald-500/20 bg-background/30 p-3 text-xs">
-                      {isRetailEvidence ? (
+                    <div className={`mt-3 space-y-2 rounded-lg border bg-background/30 p-3 text-xs ${runSnapshot?.outcome?.publishable === false ? "border-amber-500/20" : "border-emerald-500/20"}`}>
+                      {isMappingQualificationEvidence ? (
+                        <>
+                          <div className="rounded border border-amber-500/25 bg-amber-500/5 p-2 text-amber-100">
+                            验收 Pipeline 和证据归档已完成，但原始建图进程没有成功启动；本结果不可作为建图成功证明。
+                          </div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">容器 / 二进制架构</span><code>{runSnapshot.evidence.runtime?.container_arch} / {runSnapshot.evidence.runtime?.payload_binary_arch}</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">ROS 2 / 回放数据</span><code>{runSnapshot.evidence.runtime?.ros2_available ? "可用" : "缺失"} / {runSnapshot.evidence.delivery?.dataset_count || 0} 组</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">阻断项 / 完整性</span><code>{runSnapshot.evidence.blockers?.length || 0} / {runSnapshot.evidence.integrity?.verified ? "SHA-256 通过" : "未通过"}</code></div>
+                        </>
+                      ) : isImageEdgeEvidence ? (
+                        <>
+                          <div className="rounded border border-emerald-500/25 bg-emerald-500/5 p-2 text-emerald-100">
+                            输入图、算法输出、滑动对比与局部放大已在主证据视图中加载；此处仅保留验收摘要，避免重复缩略图误导用户。
+                          </div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">图像尺寸</span><code>{runSnapshot.evidence.metrics?.width_px} x {runSnapshot.evidence.metrics?.height_px} px</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">边缘均值 / 半径</span><code>{Number(runSnapshot.evidence.metrics?.edge_mean || 0).toFixed(4)} / {runSnapshot.evidence.metrics?.radius}</code></div>
+                          <div className="flex justify-between gap-3"><span className="opacity-70">完整性</span><code>{runSnapshot.evidence.integrity?.verified ? "SHA-256 通过" : "未通过"}</code></div>
+                        </>
+                      ) : isRetailEvidence ? (
                         <>
                           <div className="flex justify-between gap-3"><span className="opacity-70">点云 / Mesh</span><code>{runSnapshot.evidence.input?.point_count?.toLocaleString()} 点 / {runSnapshot.evidence.scene?.mesh?.faces?.toLocaleString()} 面</code></div>
                           <div className="flex justify-between gap-3"><span className="opacity-70">识别 / 导航</span><code>{runSnapshot.evidence.perception?.detection_count} 个 / {runSnapshot.evidence.navigation?.path_length_m?.toFixed(3)} m</code></div>
@@ -1570,7 +1790,11 @@ export default function SimulationLab() {
                         </p>
                       </div>
                       <Badge variant={publishable ? "secondary" : "outline"}>
-                        {publishable ? "证据通过" : containerPhaseLabel[run.status] || run.status}
+                        {publishable
+                          ? "证据通过"
+                          : run.outcome?.validation_result === "blocked"
+                            ? "验收阻断"
+                            : containerPhaseLabel[run.status] || run.status}
                       </Badge>
                     </div>
                     <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">

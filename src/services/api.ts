@@ -430,7 +430,127 @@ export const simulationApi = {
   }),
 };
 
+export const deploymentApi = {
+  getCatalog: () => apiRequest<any>('/deployment/catalog'),
+  run: (data: {
+    workflow_name: string;
+    pipeline_id: string | number;
+    robot: any;
+    algorithms: any[];
+    scene: string;
+    seed?: number;
+    fault_mode?: 'none';
+  }) => apiRequest<any>('/simulation/run?view=deployment', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  getRun: (id: string) => apiRequest<any>(`/simulation/runs/${id}?view=deployment`),
+  cancelRun: (id: string, expectedRevision: number) =>
+    apiRequest<any>(`/simulation/runs/${id}/control?view=deployment`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'cancel', expected_revision: expectedRevision }),
+    }),
+};
+
+export interface EdgeCompatibilityIssue {
+  code: string;
+  message: string;
+}
+
+export interface EdgeCompatibility {
+  runnable: boolean;
+  blockers: EdgeCompatibilityIssue[];
+  warnings: EdgeCompatibilityIssue[];
+  checks: Array<EdgeCompatibilityIssue & { passed: boolean }>;
+  evaluated_at?: string;
+}
+
+export interface EdgeNode {
+  id: string;
+  robot_id: string | number;
+  name: string;
+  online: boolean;
+  agent_status: string;
+  agent_version?: string;
+  ip_address: string;
+  observed_ip?: string;
+  architecture: string;
+  os?: { name?: string; version?: string; kernel?: string };
+  ros?: { distro?: string; domain_id?: number; rmw?: string };
+  gpu?: { available?: boolean; name?: string; cuda_version?: string; driver_version?: string };
+  sensors?: Array<string | { name?: string; type?: string }>;
+  topics?: Array<string | { name?: string; type?: string; qos?: string }>;
+  registry_endpoints?: Array<{ endpoint: string; reachable: boolean; last_checked_at?: string }>;
+  current_deployment?: { id?: string; algorithm_name?: string; version?: string; status?: string; image?: string } | null;
+  certificate?: { fingerprint?: string; expires_at?: string };
+  last_seen_at?: string;
+  compatibility?: EdgeCompatibility;
+}
+
+export interface EdgeDeployment {
+  id: string;
+  node_id: string;
+  robot_id: string | number;
+  status: string;
+  desired_state: string;
+  message?: string;
+  revision: number;
+  rollback_available?: boolean;
+  algorithm: { id: string | number; name: string; version?: string; image: string };
+  pipeline: { id: string | number; name: string };
+  compatibility: EdgeCompatibility;
+  created_at: string;
+  updated_at: string;
+}
+
+export const edgeApi = {
+  getNodes: (algorithmId?: string | number) =>
+    apiRequest<{ result: { data: EdgeNode[]; count: number } }>(
+      `/edge/nodes${algorithmId === undefined ? '' : `?algorithm_id=${encodeURIComponent(algorithmId)}`}`,
+    ),
+  getNodeHealth: (id: string, algorithmId?: string | number) =>
+    apiRequest<{ result: { node: EdgeNode; compatibility: EdgeCompatibility | null } }>(
+      `/edge/nodes/${encodeURIComponent(id)}/health${algorithmId === undefined ? '' : `?algorithm_id=${encodeURIComponent(algorithmId)}`}`,
+    ),
+  pushCameraFrame: (id: string, frame: {
+    encoding: 'rgb8';
+    width: number;
+    height: number;
+    step: number;
+    data_base64: string;
+    captured_at: string;
+  }) => apiRequest<{ result: { accepted: boolean; sequence: number; received_at: string } }>(
+    `/edge/nodes/${encodeURIComponent(id)}/camera/frame`,
+    { method: 'POST', body: JSON.stringify(frame) },
+  ),
+  getCameraStatus: (id: string) => apiRequest<{ result: {
+    active: boolean;
+    sequence: number;
+    width: number | null;
+    height: number | null;
+    received_at: string | null;
+    source: string | null;
+  } }>(`/edge/nodes/${encodeURIComponent(id)}/camera/status`),
+  createDeployment: (data: {
+    node_id: string;
+    algorithm_id: string | number;
+    pipeline_id: string | number;
+    site_code: string;
+    parameters?: Record<string, unknown>;
+  }) => apiRequest<{ result: EdgeDeployment }>('/edge/deployments', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  getDeployment: (id: string) =>
+    apiRequest<{ result: EdgeDeployment }>(`/edge/deployments/${encodeURIComponent(id)}`),
+  stopDeployment: (id: string) =>
+    apiRequest<{ result: EdgeDeployment }>(`/edge/deployments/${encodeURIComponent(id)}/stop`, { method: 'POST' }),
+  rollbackDeployment: (id: string) =>
+    apiRequest<{ result: EdgeDeployment }>(`/edge/deployments/${encodeURIComponent(id)}/rollback`, { method: 'POST' }),
+};
+
 export const platformApi = {
+  getReadiness: () => apiRequest<any>('/health/ready'),
   getCapabilities: () => apiRequest<any>(API_ENDPOINTS.platformCapabilities),
   getImageBuilds: () => apiRequest<any>(API_ENDPOINTS.imageBuilds),
   createImageBuild: (data: {

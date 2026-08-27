@@ -21,6 +21,9 @@ output/
 algorithm/**/evidence/
 algorithm/**/__pycache__/
 algorithm/**/*.pyc
+**/__pycache__/
+**/*.pyc
+docs/rendered/
 
 # Editor directories and files
 .vscode/*

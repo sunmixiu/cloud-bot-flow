@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   AlertDialog,
@@ -45,7 +46,7 @@ import {
 import { EditResourceDialog, Resource } from "@/components/resource/EditResourceDialog";
 import { AddResourceDialog } from "@/components/resource/AddResourceDialog";
 import { useToast } from "@/hooks/use-toast";
-import { algorithmApi, datasetApi, pipelineApi, resourceApi } from "@/services/api";
+import { algorithmApi, datasetApi, edgeApi, pipelineApi, resourceApi, type EdgeNode } from "@/services/api";
 
 interface WebSocketTopic {
   url: string;
@@ -69,6 +70,7 @@ interface Robot extends Resource {
   };
   end_effector_force_topic: WebSocketTopic;
   joint_angles_topic: WebSocketTopic;
+  edgeNode?: EdgeNode;
 }
 
 interface Task {
@@ -154,14 +156,19 @@ export default function ResourceManagement() {
     const loadData = async () => {
       try {
         // 加载所有数据
-        const [robotsData, tasksResponse, datasetsResponse, algorithmsResponse] = await Promise.all([
+        const [robotsData, tasksResponse, datasetsResponse, algorithmsResponse, edgeNodesResponse] = await Promise.all([
           resourceApi.getRobots(),
           pipelineApi.getList(),
           datasetApi.getList(),
-          algorithmApi.getList()
+          algorithmApi.getList(),
+          edgeApi.getNodes().catch(() => ({ result: { data: [], count: 0 } }))
         ]);
-        
-        setRobots(robotsData as Robot[]);
+
+        const edgeNodes = edgeNodesResponse.result.data || [];
+        setRobots((robotsData as Robot[]).map((robot) => ({
+          ...robot,
+          edgeNode: edgeNodes.find((node) => String(node.robot_id) === String(robot.id)),
+        })));
         
         // 处理任务数据 - 从API响应中提取data数组
         const tasksData = (tasksResponse as ApiListResponse<Task>).result?.data || [];
@@ -390,6 +397,8 @@ export default function ResourceManagement() {
                 <TableRow>
                   <TableHead>名称</TableHead>
                   <TableHead>型号</TableHead>
+                  <TableHead>Agent 状态</TableHead>
+                  <TableHead>IP / 架构</TableHead>
                   <TableHead>底盘</TableHead>
                   <TableHead>执行器</TableHead>
                   <TableHead>工作范围</TableHead>
@@ -403,6 +412,17 @@ export default function ResourceManagement() {
                   <TableRow key={robot.id}>
                     <TableCell className="font-medium">{robot.name}</TableCell>
                     <TableCell>{robot.model}</TableCell>
+                    <TableCell>
+                      <Badge variant={robot.edgeNode?.online ? "default" : "outline"} className={robot.edgeNode?.online ? "bg-emerald-600 hover:bg-emerald-600" : ""}>
+                        {robot.edgeNode ? (robot.edgeNode.online ? "在线" : "离线") : "未登记"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs">
+                        <p className="font-mono">{robot.edgeNode?.ip_address || "-"}</p>
+                        <p className="mt-1 text-muted-foreground">{robot.edgeNode?.architecture || "未上报"}</p>
+                      </div>
+                    </TableCell>
                     <TableCell>{robot.chassis}</TableCell>
                     <TableCell>{robot.actuator}</TableCell>
                     <TableCell>{robot.working_range}</TableCell>
@@ -666,6 +686,40 @@ export default function ResourceManagement() {
                     <span className="text-sm font-medium text-muted-foreground">负载:</span>
                     <p className="text-sm mt-1">{(detailsResource as Robot).loading}</p>
                   </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-semibold">机器人在线登记</h4>
+                    <Badge variant={(detailsResource as Robot).edgeNode?.online ? "default" : "outline"} className={(detailsResource as Robot).edgeNode?.online ? "bg-emerald-600 hover:bg-emerald-600" : ""}>
+                      {(detailsResource as Robot).edgeNode ? ((detailsResource as Robot).edgeNode?.online ? "Agent 在线" : "Agent 离线") : "未登记 Agent"}
+                    </Badge>
+                  </div>
+                  {(detailsResource as Robot).edgeNode ? (() => {
+                    const node = (detailsResource as Robot).edgeNode as EdgeNode;
+                    const sensors = (node.sensors || []).map((item) => typeof item === "string" ? item : item.name || item.type || "未命名传感器");
+                    const topics = (node.topics || []).map((item) => typeof item === "string" ? item : `${item.name || "未命名"}${item.type ? ` (${item.type})` : ""}`);
+                    return (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <DetailField label="机器人 IP" value={node.ip_address || "未上报"} mono />
+                          <DetailField label="CPU 架构" value={node.architecture || "未上报"} />
+                          <DetailField label="操作系统" value={[node.os?.name, node.os?.version, node.os?.kernel].filter(Boolean).join(" · ") || "未上报"} />
+                          <DetailField label="ROS 2 版本" value={[node.ros?.distro, node.ros?.rmw, node.ros?.domain_id !== undefined ? `Domain ${node.ros.domain_id}` : ""].filter(Boolean).join(" · ") || "未上报"} />
+                          <DetailField label="GPU / CUDA" value={node.gpu?.available ? [node.gpu.name, node.gpu.cuda_version && `CUDA ${node.gpu.cuda_version}`].filter(Boolean).join(" · ") || "可用" : "未检测到可用 GPU"} />
+                          <DetailField label="当前部署版本" value={node.current_deployment ? `${node.current_deployment.algorithm_name || "算法"} ${node.current_deployment.version || ""} · ${node.current_deployment.status || "unknown"}` : "无"} />
+                          <DetailField label="证书有效期" value={node.certificate?.expires_at || "未上报"} />
+                          <DetailField label="最后心跳" value={node.last_seen_at || "从未上报"} />
+                        </div>
+                        <DetailList label="传感器" items={sensors} empty="未上报传感器" />
+                        <DetailList label={`Topic 清单（${topics.length}）`} items={topics} empty="未上报 Topic" mono />
+                      </div>
+                    );
+                  })() : (
+                    <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                      该机器人尚未通过 Edge Agent 注册。页面不会根据机器人名称或静态 IP 伪造在线状态。
+                    </p>
+                  )}
                 </div>
 
                 <div className="border-t pt-3">
@@ -961,6 +1015,28 @@ export default function ResourceManagement() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function DetailField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <span className="text-sm font-medium text-muted-foreground">{label}:</span>
+      <p className={`mt-1 break-all text-sm ${mono ? "font-mono text-xs" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function DetailList({ label, items, empty, mono = false }: { label: string; items: string[]; empty: string; mono?: boolean }) {
+  return (
+    <div>
+      <p className="mb-2 text-sm font-medium text-muted-foreground">{label}:</p>
+      {items.length ? (
+        <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg bg-muted/50 p-3">
+          {items.map((item, index) => <p key={`${item}-${index}`} className={`break-all text-xs ${mono ? "font-mono" : ""}`}>{item}</p>)}
+        </div>
+      ) : <p className="text-sm text-muted-foreground">{empty}</p>}
     </div>
   );
 }

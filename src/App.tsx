@@ -16,6 +16,7 @@ const RobotViewer = lazy(() => import("./pages/RobotViewer"));
 const AlgorithmLibrary = lazy(() => import("./pages/AlgorithmLibrary"));
 const SimulationLab = lazy(() => import("./pages/SimulationLab"));
 const BuildPipeline = lazy(() => import("./pages/BuildPipeline"));
+const QuickDeployment = lazy(() => import("./pages/QuickDeployment"));
 const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -55,6 +56,7 @@ const App = () => {
                       <Route path="/viewer" element={<RobotViewer />} />
                       <Route path="/algorithm-library" element={<AlgorithmLibrary />} />
                       <Route path="/build-pipeline" element={<BuildPipeline />} />
+                      <Route path="/quick-deployment" element={<QuickDeployment />} />
                       <Route path="/simulation" element={<SimulationLab />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />

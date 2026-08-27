@@ -1,0 +1,32 @@
+{
+  "platform_url": "http://<平台电脑局域网IP>:3001",
+  "robot_id": 2,
+  "name": "WSL2 ROS 2 测试节点",
+  "agent_id": "wsl2-humble-local",
+  "poll_interval_seconds": 10,
+  "ros_setup": "/opt/ros/humble/setup.bash",
+  "ros_domain_id": 0,
+  "docker_command": "docker",
+  "registry_endpoints": [
+    "<平台电脑局域网IP>:5002"
+  ],
+  "sensors": [
+    {
+      "name": "WSL2 测试数据源",
+      "type": "simulation"
+    }
+  ],
+  "certificate_path": "/etc/cloud-bot-flow-edge/agent.crt",
+  "container_cpu_limit": "2.0",
+  "container_memory_limit": "4g",
+  "container_pids_limit": 512,
+  "camera_bridge": {
+    "enabled": false,
+    "topic": "/camera/image",
+    "frame_id": "browser_local_camera",
+    "publish_hz": 4,
+    "max_age_seconds": 5,
+    "snapshot_path": "/var/lib/cloud-bot-flow-edge/camera/latest.ppm"
+  },
+  "state_file": "/var/lib/cloud-bot-flow-edge/credentials.json"
+}

@@ -10,17 +10,20 @@ import {
   platformConfiguration
 } from "./platform-services.mjs";
 import { kubernetesClient } from "./kubernetes-service.mjs";
+import { createEdgeService } from "./edge-service.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const backendDir = path.dirname(currentFile);
 const projectDir = path.resolve(backendDir, "..");
 const workspaceDir = path.resolve(projectDir, "..");
 const staticDir = path.join(projectDir, "dist");
-const dataFile = path.join(backendDir, "data.json");
-const dataBackupFile = path.join(backendDir, "data.json.bak");
-const dataTempFile = path.join(backendDir, "data.json.tmp");
+const dataFile = process.env.CLOUD_BOT_FLOW_DATA_FILE
+  ? path.resolve(process.env.CLOUD_BOT_FLOW_DATA_FILE)
+  : path.join(backendDir, "data.json");
+const dataBackupFile = `${dataFile}.bak`;
+const dataTempFile = `${dataFile}.tmp`;
 const catalogFile = path.join(backendDir, "open-source-catalog.json");
-const port = Number(process.env.PORT || 3001);
+const port = Number(process.env.CLOUD_BOT_FLOW_PORT || process.env.PORT || 3001);
 const host = process.env.HOST || "127.0.0.1";
 
 const collectionRoutes = {
@@ -188,6 +191,8 @@ store.registryRepositories ??= [
 ];
 store.pipelineRuns ??= [];
 store.artifacts ??= [];
+store.edgeNodes ??= [];
+store.edgeDeployments ??= [];
 
 for (const artifact of store.artifacts) {
   const run = store.simulationRuns.find((item) => item.id === artifact.run_id);
@@ -374,6 +379,13 @@ const retailDigitalTwinAsset = {
   image_digest: "sha256:64ac7fa30ec420f3bc8e27f18ea635787e0b092d7c75ca6732601c5575097f5e",
   image_status: "verified",
   command: "python -m retail_twin.run --output /output --seed 20260818",
+  edge_command: ["--output", "/output", "--seed", "20260818"],
+  edge_runtime: {
+    kind: "batch",
+    network: "host",
+    output_contract: "artifact-directory",
+    description: "在机器人边缘计算机执行一次性场景处理并将证据写入 /output；不宣称订阅 ROS 2 Topic 或控制执行器。"
+  },
   runtime: "Python 3.12 / OCI / Argo Workflows",
   inputs: [],
   outputs: [
@@ -404,6 +416,26 @@ store.simulationAlgorithms = upsertCatalogItems(
   store.simulationAlgorithms,
   [retailDigitalTwinAsset]
 );
+
+// The barcode image remains a black-box batch executable. On edge nodes it is
+// fed by the audited browser-camera -> ROS 2 -> immutable snapshot adapter.
+const retailBarcodeEdgeAsset = store.simulationAlgorithms.find(
+  (algorithm) => Number(algorithm.id) === 107
+);
+if (retailBarcodeEdgeAsset) {
+  retailBarcodeEdgeAsset.edge_runtime = {
+    kind: "ros2-snapshot",
+    input_topic: "/camera/image",
+    input_mount_path: "/input/image.ppm",
+    output_contract: "result-json",
+    description: "消费 ROS 2 相机桥接器生成的新鲜快照；容器只读挂载输入，不直接获得摄像头设备权限。"
+  };
+  retailBarcodeEdgeAsset.edge_command = [
+    "--input", "/input/image.ppm",
+    "--output", "/output/result.json",
+    "--require-detection"
+  ];
+}
 store.algorithms = upsertCatalogItems(store.algorithms, [{
   id: retailDigitalTwinAsset.id,
   catalog_key: retailDigitalTwinAsset.catalog_key,
@@ -438,7 +470,7 @@ store.pipelines = upsertCatalogItems(store.pipelines, [{
 }]);
 
 function setCommonHeaders(response) {
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Edge-Bootstrap-Token, X-Edge-Node-Token");
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   response.setHeader("Cache-Control", "no-store");
 }
@@ -981,6 +1013,13 @@ function getRobotProfile(robot) {
 }
 
 function getAlgorithmRequirements(algorithm) {
+  if (algorithm.evidence_kind === "mapping-runtime-qualification") {
+    return {
+      robot_kinds: ["mobile_base"],
+      capabilities: ["camera", "imu", "lidar", "odometry"],
+      scenes: ["warehouse", "retail-store"]
+    };
+  }
   if (algorithm.evidence_kind === "physics-simulation") {
     return catalogRequirements["bullet-panda-pick-place"];
   }
@@ -1153,6 +1192,9 @@ function buildCompatibilityReport(
     if (!algorithm.workflow_manifest) {
       errors.push(`${algorithm.name} 缺少受控 Workflow 清单`);
     }
+    if (algorithm.status === "quarantined") {
+      warnings.push(`${algorithm.name} 当前为隔离资产，只允许执行资格验收，不能作为可上线算法发布`);
+    }
 
     steps.push({
       id: algorithm.id,
@@ -1177,8 +1219,11 @@ function buildCompatibilityReport(
       Boolean(algorithm.workflow_manifest) &&
       String(algorithm.image || "").includes("@sha256:")
   );
+  const qualificationOnly = algorithms.some((algorithm) => algorithm.status === "quarantined");
   return {
     runnable: errors.length === 0 && hasArgoWorkflow,
+    qualification_only: qualificationOnly,
+    publishable_candidate: errors.length === 0 && hasArgoWorkflow && !qualificationOnly,
     score,
     scene,
     scene_version: sceneProfile?.version || null,
@@ -1260,6 +1305,48 @@ function compactRunForList(run) {
         ? { ...event.payload, playback: { keyframe_count: event.payload.playback.keyframe_count } }
         : event.payload
     }))
+  };
+}
+
+function sanitizeDeploymentRun(run) {
+  return {
+    id: run.id,
+    workflow_name: run.workflow_name,
+    status: run.status,
+    progress: run.progress,
+    revision: run.revision,
+    algorithms: (run.algorithms || []).map((algorithm) => ({
+      id: algorithm.id,
+      name: algorithm.name,
+      version: algorithm.version
+    })),
+    remote_workflow: run.remote_workflow
+      ? {
+          name: run.remote_workflow.name,
+          namespace: run.remote_workflow.namespace,
+          phase: run.remote_workflow.phase,
+          uid: run.remote_workflow.uid
+        }
+      : null,
+    outcome: run.outcome
+      ? {
+          validation_result: run.outcome.validation_result,
+          publishable: run.outcome.publishable,
+          reason: run.outcome.reason
+        }
+      : null,
+    evidence: run.evidence
+      ? {
+          kind: run.evidence.kind,
+          artifact_key: run.evidence.artifact_key,
+          integrity: run.evidence.integrity
+            ? { verified: run.evidence.integrity.verified === true }
+            : null,
+          blocker_count: Array.isArray(run.evidence.blockers) ? run.evidence.blockers.length : 0
+        }
+      : null,
+    started_at: run.started_at,
+    finished_at: run.finished_at
   };
 }
 
@@ -1401,11 +1488,107 @@ async function updateArgoRun(run) {
     const isRetailDigitalTwin = run.algorithms?.some(
       (algorithm) => algorithm.evidence_kind === "retail-digital-twin"
     );
+    const isImageEdgeDetection = run.algorithms?.some(
+      (algorithm) => algorithm.evidence_kind === "image-edge-detection"
+    );
+    const isMappingRuntimeQualification = run.algorithms?.some(
+      (algorithm) => algorithm.evidence_kind === "mapping-runtime-qualification"
+    );
     let verified = false;
+    let publishable = false;
+    let validationResult = "failed";
     let evidencePayload;
     let outcomeReason;
 
-    if (isRetailDigitalTwin) {
+    if (isMappingRuntimeQualification) {
+      const qualification = extractTarJson(archive, "mapping-runtime-report.json");
+      const integrity = verifyEvidenceChecksums(archive, [
+        "mapping-runtime-report.json",
+        "runtime-probe.log"
+      ]);
+      verified =
+        integrity.verified === true &&
+        ["blocked", "succeeded"].includes(qualification.status) &&
+        qualification.assertions?.immutable_image_digest === true &&
+        qualification.assertions?.source_tree_present === true &&
+        qualification.assertions?.model_present === true;
+      publishable = verified && qualification.publishable === true;
+      validationResult = verified ? (publishable ? "passed" : "blocked") : "failed";
+      evidencePayload = {
+        kind: "mapping-runtime-qualification",
+        artifact_key: artifactKey,
+        algorithm: qualification.algorithm,
+        runtime: qualification.runtime,
+        delivery: qualification.delivery,
+        probe: qualification.probe,
+        assertions: qualification.assertions,
+        blockers: qualification.blockers || [],
+        required_fix: qualification.required_fix || [],
+        publishable,
+        integrity
+      };
+      const simulationTimestamp = workflow.status?.finishedAt || now;
+      const trustedMetric = (value, unit) => ({
+        value,
+        unit,
+        source: "fastlivo2-delivery-container",
+        timestamp: simulationTimestamp,
+        trustworthy: true
+      });
+      run.metrics = {
+        source_files: trustedMetric(qualification.delivery?.source_file_count ?? 0, "files"),
+        model_bytes: trustedMetric(qualification.delivery?.model_bytes ?? 0, "bytes"),
+        dataset_count: trustedMetric(qualification.delivery?.dataset_count ?? 0, "datasets"),
+        blocker_count: trustedMetric(qualification.blockers?.length ?? 0, "blockers")
+      };
+      outcomeReason = publishable
+        ? "FAST-LIVO2 交付镜像运行时验收通过，可进入传感器数据回放阶段"
+        : `FAST-LIVO2 交付镜像验收完成，但存在 ${qualification.blockers?.length || 0} 个上线阻断项，禁止作为可运行建图算法发布`;
+    } else if (isImageEdgeDetection) {
+      const edge = extractTarJson(archive, "edge-run.json");
+      const integrity = verifyEvidenceChecksums(archive, [
+        "input.png",
+        "edge.png",
+        "edge-run.json"
+      ]);
+      verified =
+        integrity.verified === true &&
+        edge.status === "succeeded" &&
+        edge.publishable === true &&
+        Object.values(edge.assertions || {}).every((value) => value === true);
+      evidencePayload = {
+        kind: "image-edge-detection",
+        artifact_key: artifactKey,
+        algorithm: edge.algorithm,
+        metrics: edge.metrics,
+        assertions: edge.assertions,
+        assets: edge.assets,
+        input_asset: { path: "input.png", format: "PNG" },
+        edge_asset: { path: "edge.png", format: "PNG" },
+        visual_assets: {
+          input: { path: "input.png", format: "PNG", source: "workflow-generated" },
+          output: { path: "edge.png", format: "PNG", source: "algorithm-container" }
+        },
+        integrity
+      };
+      const simulationTimestamp = workflow.status?.finishedAt || now;
+      const trustedMetric = (value, unit) => ({
+        value,
+        unit,
+        source: "imagemagick-edge-container",
+        timestamp: simulationTimestamp,
+        trustworthy: true
+      });
+      run.metrics = {
+        image_width: trustedMetric(edge.metrics?.width_px ?? null, "px"),
+        image_height: trustedMetric(edge.metrics?.height_px ?? null, "px"),
+        edge_mean: trustedMetric(edge.metrics?.edge_mean ?? null, "normalized"),
+        edge_radius: trustedMetric(edge.metrics?.radius ?? null, "px")
+      };
+      outcomeReason = verified
+        ? `Docker Hub ImageMagick 边缘检测通过：${edge.metrics?.width_px || 0}x${edge.metrics?.height_px || 0}，边缘均值 ${Number(edge.metrics?.edge_mean || 0).toFixed(4)}`
+        : "ImageMagick 边缘检测的输出、尺寸或信号断言未通过";
+    } else if (isRetailDigitalTwin) {
       const retail = extractTarJson(archive, "retail-run.json");
       const integrity = verifyEvidenceChecksums(archive, [
         "retail-run.json",
@@ -1536,11 +1719,19 @@ async function updateArgoRun(run) {
         upstream_commit: barcodeEvidence.upstream_commit,
         elapsed_ms: algorithmResult.elapsed_ms,
         found: algorithmResult.found,
+        visual_assets: {
+          input: { path: "input.png", format: "PNG", source: "workflow-generated" },
+          output: null
+        },
         integrity
       };
       outcomeReason = verified
         ? `真实容器识别成功：${barcodeEvidence.expected} → ${barcodeEvidence.detected?.text}`
         : "条码识别结果与期望值不一致";
+    }
+    if (!isMappingRuntimeQualification) {
+      publishable = verified;
+      validationResult = verified ? "passed" : "failed";
     }
     run.status = verified ? "completed" : "failed";
     run.progress = 100;
@@ -1552,21 +1743,27 @@ async function updateArgoRun(run) {
     run.evidence = evidencePayload;
     run.outcome = {
       code: verified
-        ? isRetailDigitalTwin
-          ? "retail-digital-twin-baseline-succeeded"
-          : isPhysicsSimulation
-            ? "physics-simulation-succeeded"
-            : "cube-studio-closed-loop-succeeded"
+        ? isMappingRuntimeQualification
+          ? publishable
+            ? "mapping-runtime-qualification-succeeded"
+            : "mapping-runtime-qualification-blocked"
+          : isImageEdgeDetection
+          ? "image-edge-detection-succeeded"
+          : isRetailDigitalTwin
+            ? "retail-digital-twin-baseline-succeeded"
+            : isPhysicsSimulation
+              ? "physics-simulation-succeeded"
+              : "cube-studio-closed-loop-succeeded"
         : "cube-studio-assertion-failed",
-      validation_result: verified ? "passed" : "failed",
-      publishable: verified,
+      validation_result: validationResult,
+      publishable,
       reason: outcomeReason
     };
     if (!run.artifact_id) {
       const artifact = {
         id: `artifact-${randomUUID()}`,
         run_id: run.id,
-        name: `${run.remote_workflow.name}-${isRetailDigitalTwin ? "retail-digital-twin" : isPhysicsSimulation ? "physics" : "closed-loop"}-evidence.tgz`,
+        name: `${run.remote_workflow.name}-${isMappingRuntimeQualification ? "mapping-qualification" : isImageEdgeDetection ? "image-edge" : isRetailDigitalTwin ? "retail-digital-twin" : isPhysicsSimulation ? "physics" : "closed-loop"}-evidence.tgz`,
         content_type: "application/gzip",
         storage: {
           provider: "cube-minio",
@@ -1581,7 +1778,11 @@ async function updateArgoRun(run) {
     }
     appendRunEvent(
       run,
-      verified ? "result" : "assertion_failed",
+      verified
+        ? isMappingRuntimeQualification && !publishable
+          ? "qualification_blocked"
+          : "result"
+        : "assertion_failed",
       run.outcome.reason,
       run.evidence
     );
@@ -1777,7 +1978,8 @@ function isProtectedApiPath(pathname) {
     "/deployments",
     "/simulation/",
     "/platform/",
-    "/robot-design/"
+    "/robot-design/",
+    "/edge/"
   ].some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -1815,6 +2017,8 @@ function recoverLegacyRuns() {
 
 recoverLegacyRuns();
 await persistStore();
+
+const edgeService = createEdgeService({ store, persistStore, readBody, sendJson, sendError });
 
 const server = http.createServer(async (request, response) => {
   setCommonHeaders(response);
@@ -1878,6 +2082,9 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    // Edge Agent 使用独立凭据；这些请求不是浏览器会话。
+    if (await edgeService.handleAgentRequest(request, response, pathname)) return;
+
     if (isProtectedApiPath(pathname)) {
       const session = getSession(request);
       if (!session) {
@@ -1891,6 +2098,110 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (await handleCollectionApi(request, response, pathname)) return;
+
+    // 浏览器只访问平台后端，由后端向 Agent 队列下发部署任务。
+    if (await edgeService.handlePlatformRequest(request, response, pathname, url)) return;
+
+    if (pathname === "/deployment/catalog" && request.method === "GET") {
+      let shouldPersist = false;
+      for (const run of store.simulationRuns) {
+        const previousStatus = run.status;
+        const changed = await refreshSimulationRun(run);
+        if (changed || previousStatus !== run.status) shouldPersist = true;
+      }
+      if (shouldPersist) await persistStore();
+
+      const algorithms = store.simulationAlgorithms
+        .filter(
+          (algorithm) =>
+            algorithm.execution_adapter === "cube-studio-argo-workflow" &&
+            Boolean(algorithm.workflow_manifest) &&
+            String(algorithm.image || "").includes("@sha256:")
+        )
+        .map((algorithm) => ({
+          id: algorithm.id,
+          name: algorithm.name,
+          module: algorithm.module,
+          version: algorithm.version,
+          image: algorithm.image,
+          image_digest: algorithm.image_digest || String(algorithm.image).split("@")[1] || null,
+          image_status: algorithm.image_status,
+          platforms: algorithm.platforms || [],
+          runtime: algorithm.runtime,
+          inputs: algorithm.inputs || [],
+          outputs: algorithm.outputs || [],
+          input_types: algorithm.input_types || {},
+          output_types: algorithm.output_types || {},
+          generated_inputs: algorithm.generated_inputs || [],
+          description: algorithm.description,
+          status: algorithm.status,
+          color: algorithm.color,
+          execution_adapter: algorithm.execution_adapter,
+          workflow_bound: true,
+          evidence_kind: algorithm.evidence_kind,
+          recommended_robot_ids: algorithm.recommended_robot_ids || []
+        }));
+      const algorithmIds = new Set(algorithms.map((algorithm) => String(algorithm.id)));
+      const pipelines = store.pipelines
+        .filter(
+          (pipeline) =>
+            Array.isArray(pipeline.algorithm_ids) &&
+            pipeline.algorithm_ids.some((id) => algorithmIds.has(String(id))) &&
+            Boolean(pipeline.workflow_manifest)
+        )
+        .map((pipeline) => ({
+          id: pipeline.id,
+          name: pipeline.name,
+          description: pipeline.description,
+          status: pipeline.status,
+          algorithm_ids: pipeline.algorithm_ids,
+          recommended_robot_ids: pipeline.recommended_robot_ids || [],
+          workflow_bound: true
+        }));
+      const robots = store.robots.map((robot) => ({
+        id: robot.id,
+        name: robot.name,
+        model: robot.model,
+        chassis: robot.chassis,
+        actuator: robot.actuator,
+        deployment_target: robot.deployment_target
+      }));
+      const scenarios = Object.values(sceneProfiles).map((scene) => ({
+        id: scene.id,
+        label: scene.label,
+        version: scene.version,
+        compatible_robot_kinds: scene.compatible_robot_kinds,
+        minimum_robots: scene.minimum_robots || 1
+      }));
+      const runs = store.simulationRuns
+        .filter((run) => run.execution_mode === "cube-studio-argo")
+        .slice()
+        .reverse()
+        .slice(0, 30)
+        .map(sanitizeDeploymentRun);
+
+      sendJson(response, 200, {
+        result: {
+          algorithms,
+          pipelines,
+          robots,
+          scenarios,
+          runs,
+          inventory: {
+            total_registered: store.simulationAlgorithms.length,
+            black_box_deliveries: algorithms.length,
+            pending_packaging: Math.max(0, store.simulationAlgorithms.length - algorithms.length)
+          },
+          policy: {
+            source_fields_exposed: false,
+            immutable_digest_required: true,
+            controlled_workflow_required: true,
+            evidence_required: true
+          }
+        }
+      });
+      return;
+    }
 
     if (pathname === "/platform/capabilities" && request.method === "GET") {
       const [cubeHealth, artifactHealth] = await Promise.all([
@@ -2363,6 +2674,16 @@ const server = http.createServer(async (request, response) => {
       ) {
         bindingErrors.push("所选算法不属于当前画布绑定的 Pipeline");
       }
+      if (
+        pipeline?.recommended_robot_ids?.length &&
+        !pipeline.recommended_robot_ids.some((id) => String(id) === String(body.robot?.id || ""))
+      ) {
+        const recommendedNames = pipeline.recommended_robot_ids
+          .map((id) => findItem(store.robots, id)?.name)
+          .filter(Boolean)
+          .join("、");
+        bindingErrors.push(`当前 Pipeline 需要机器人：${recommendedNames || pipeline.recommended_robot_ids.join("、")}`);
+      }
       sendJson(response, 200, {
         result: buildCompatibilityReport(
           resolution.algorithms,
@@ -2385,11 +2706,23 @@ const server = http.createServer(async (request, response) => {
       const resolution = resolveSimulationAlgorithms(requestedAlgorithms);
       const resolvedAlgorithms = resolution.algorithms;
       const registeredRobot = body.robot?.id ? findItem(store.robots, body.robot.id) : null;
+      const pipeline = body.pipeline_id ? findItem(store.pipelines, body.pipeline_id) : null;
+      const runErrors = [...resolution.errors];
+      if (
+        pipeline?.recommended_robot_ids?.length &&
+        !pipeline.recommended_robot_ids.some((id) => String(id) === String(registeredRobot?.id || ""))
+      ) {
+        const recommendedNames = pipeline.recommended_robot_ids
+          .map((id) => findItem(store.robots, id)?.name)
+          .filter(Boolean)
+          .join("、");
+        runErrors.push(`当前 Pipeline 需要机器人：${recommendedNames || pipeline.recommended_robot_ids.join("、")}`);
+      }
       const compatibility = buildCompatibilityReport(
         resolvedAlgorithms,
         body.scene || "warehouse",
         registeredRobot || body.robot,
-        resolution.errors
+        runErrors
       );
       if (!compatibility.runnable) {
         sendJson(response, 422, {
@@ -2407,7 +2740,6 @@ const server = http.createServer(async (request, response) => {
         : "none";
       const workflowName = body.workflow_name || "未命名仿真工作流";
       const scene = body.scene || "warehouse";
-      const pipeline = body.pipeline_id ? findItem(store.pipelines, body.pipeline_id) : null;
       if (body.pipeline_id && !pipeline) {
         sendError(response, 404, "画布中选择的 Pipeline 不存在");
         return;
@@ -2510,7 +2842,11 @@ const server = http.createServer(async (request, response) => {
       );
       store.simulationRuns.push(run);
       await persistStore();
-      sendJson(response, 201, { result: run });
+      sendJson(response, 201, {
+        result: url.searchParams.get("view") === "deployment"
+          ? sanitizeDeploymentRun(run)
+          : run
+      });
       return;
     }
 
@@ -2557,7 +2893,11 @@ const server = http.createServer(async (request, response) => {
       if (changed || previousStatus !== run.status) {
         await persistStore();
       }
-      sendJson(response, 200, { result: run });
+      sendJson(response, 200, {
+        result: url.searchParams.get("view") === "deployment"
+          ? sanitizeDeploymentRun(run)
+          : run
+      });
       return;
     }
 
@@ -2607,6 +2947,40 @@ const server = http.createServer(async (request, response) => {
       setCommonHeaders(response);
       response.writeHead(200, {
         "Content-Type": isMesh ? "text/plain; charset=utf-8" : "image/png",
+        "Content-Length": asset.length,
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff"
+      });
+      response.end(asset);
+      return;
+    }
+
+    const visualAssetMatch = pathname.match(
+      /^\/simulation\/runs\/([^/]+)\/(visual-input|visual-output|edge-input|edge-output)$/
+    );
+    if (visualAssetMatch && request.method === "GET") {
+      const run = findItem(store.simulationRuns, decodeURIComponent(visualAssetMatch[1]));
+      if (!run || !run.evidence?.artifact_key) {
+        sendError(response, 404, "二维视觉运行证据不存在");
+        return;
+      }
+      const isInput = visualAssetMatch[2].endsWith("input");
+      const legacyAsset = run.evidence.kind === "image-edge-detection"
+        ? (isInput ? { path: "input.png", format: "PNG" } : { path: "edge.png", format: "PNG" })
+        : run.evidence.kind === "barcode-recognition" && isInput
+          ? { path: "input.png", format: "PNG" }
+          : null;
+      const declaredAsset = run.evidence.visual_assets?.[isInput ? "input" : "output"] || legacyAsset;
+      if (!declaredAsset?.path) {
+        sendError(response, 404, isInput ? "本次运行未归档原始输入图" : "本次运行未归档可视化输出图");
+        return;
+      }
+      const archive = await artifactStore.readWorkflowKey(run.evidence.artifact_key);
+      const asset = extractTarEntry(archive, declaredAsset.path);
+      const contentType = /\.jpe?g$/i.test(declaredAsset.path) ? "image/jpeg" : "image/png";
+      setCommonHeaders(response);
+      response.writeHead(200, {
+        "Content-Type": contentType,
         "Content-Length": asset.length,
         "Cache-Control": "private, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff"
@@ -2685,7 +3059,11 @@ const server = http.createServer(async (request, response) => {
       });
       run.revision = Number(run.revision || 0) + 1;
       await persistStore();
-      sendJson(response, 200, { result: run });
+      sendJson(response, 200, {
+        result: url.searchParams.get("view") === "deployment"
+          ? sanitizeDeploymentRun(run)
+          : run
+      });
       return;
     }
 

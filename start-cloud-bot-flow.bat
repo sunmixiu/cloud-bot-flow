@@ -8,10 +8,24 @@ set "PROJECT_DIR=%~dp0"
 set "DOCKER_DESKTOP=%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
 set "APP_URL=http://127.0.0.1:3001"
 set "OUTPUT_DIR=%PROJECT_DIR%output"
+set "EDGE_TOKEN_FILE=%OUTPUT_DIR%\edge-agent-bootstrap-token.txt"
+set "HOST=0.0.0.0"
+set "REGISTRY_PROXY_HOST=0.0.0.0"
+set "REGISTRY_PROXY_PORT=5002"
 set "NO_BROWSER=0"
 if /I "%~1"=="--no-browser" set "NO_BROWSER=1"
 
 cd /d "%PROJECT_DIR%"
+if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
+if not exist "%EDGE_TOKEN_FILE%" (
+  powershell -NoProfile -Command "$token=([guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N')); Set-Content -LiteralPath '%EDGE_TOKEN_FILE%' -Value $token -Encoding ASCII"
+  if errorlevel 1 goto :failed
+)
+for /f "usebackq delims=" %%T in ("%EDGE_TOKEN_FILE%") do set "EDGE_AGENT_BOOTSTRAP_TOKEN=%%T"
+if not defined EDGE_AGENT_BOOTSTRAP_TOKEN (
+  echo [错误] Edge Agent 登记密钥为空：%EDGE_TOKEN_FILE%
+  goto :failed
+)
 
 echo ============================================================
 echo   机器人云边协同调度平台 - 一键启动
@@ -55,6 +69,26 @@ call :start_existing_container cube-studio-registry "本地 OCI Registry"
 if errorlevel 1 goto :missing_cluster
 call :start_existing_container cube-studio-control-plane "kind / Cube Studio 控制节点"
 if errorlevel 1 goto :missing_cluster
+for /f "usebackq delims=" %%I in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%scripts\get-lan-ip.ps1"`) do set "PLATFORM_LAN_IP=%%I"
+if not defined PLATFORM_LAN_IP (
+  echo [错误] 无法识别局域网 IPv4 地址，不能为 WSL / 机器人发布镜像仓库。
+  goto :failed
+)
+set "EDGE_REGISTRY_PUBLIC_ENDPOINT=%PLATFORM_LAN_IP%:%REGISTRY_PROXY_PORT%"
+call :check_http "http://127.0.0.1:%REGISTRY_PROXY_PORT%/v2/"
+if errorlevel 1 (
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'node.exe' -ArgumentList 'backend/registry-proxy.mjs' -WorkingDirectory '%PROJECT_DIR%' -WindowStyle Hidden -RedirectStandardOutput '%OUTPUT_DIR%\registry-proxy.log' -RedirectStandardError '%OUTPUT_DIR%\registry-proxy-error.log' -PassThru; Set-Content -Encoding ASCII '%OUTPUT_DIR%\registry-proxy.pid' $p.Id"
+  if errorlevel 1 (
+    echo [错误] 无法启动边缘 Registry 代理。
+    goto :failed
+  )
+  call :wait_for_http "http://127.0.0.1:%REGISTRY_PROXY_PORT%/v2/" 30
+  if errorlevel 1 (
+    echo [错误] 边缘 Registry 代理未就绪，请查看 output\registry-proxy-error.log。
+    goto :failed
+  )
+)
+echo 边缘镜像仓库已发布：%EDGE_REGISTRY_PUBLIC_ENDPOINT%
 
 echo [4/8] 切换并等待 Kubernetes 集群...
 kubectl config get-contexts kind-cube-studio >nul 2>&1
@@ -102,7 +136,6 @@ if errorlevel 1 (
 echo [7/8] 启动平台后端...
 call :check_http "%APP_URL%/health"
 if errorlevel 1 (
-  if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'node.exe' -ArgumentList 'backend/server.mjs' -WorkingDirectory '%PROJECT_DIR%' -WindowStyle Hidden -RedirectStandardOutput '%OUTPUT_DIR%\backend.log' -RedirectStandardError '%OUTPUT_DIR%\backend-error.log' -PassThru; Set-Content -Encoding ASCII '%OUTPUT_DIR%\backend.pid' $p.Id"
   if errorlevel 1 (
     echo [错误] 无法创建平台后端进程。
@@ -125,11 +158,19 @@ if errorlevel 1 (
   goto :failed
 )
 
+echo [WSL] 启动并保持 ROS 2 Edge Agent 在线...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%scripts\ensure-wsl-edge-agent.ps1"
+if errorlevel 1 (
+  echo [错误] WSL2 Edge Agent 未能启动，请查看 output\wsl-edge-agent-keepalive-error.log。
+  goto :failed
+)
+
 echo.
 echo ============================================================
 echo   启动成功
 echo   平台地址：%APP_URL%
 echo   管理员：admin / admin123
+echo   Edge Agent 登记密钥：%EDGE_TOKEN_FILE%
 echo ============================================================
 echo.
 

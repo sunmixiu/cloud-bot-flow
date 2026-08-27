@@ -59,6 +59,8 @@ interface PipelineAsset {
   id: string | number;
   name: string;
   pipeline_url: string;
+  algorithm_ids?: Array<string | number>;
+  recommended_robot_ids?: Array<string | number>;
 }
 
 interface TelemetryReference {
@@ -70,6 +72,9 @@ interface TelemetryReference {
 interface RobotAsset {
   id: string | number;
   name: string;
+  model?: string;
+  chassis?: string;
+  actuator?: string;
   battery?: TelemetryReference;
   speed?: TelemetryReference;
   position_topic?: TelemetryReference;
@@ -127,6 +132,7 @@ export function WorkflowCanvas() {
   const [draggedServiceName, setDraggedServiceName] = useState<string | null>(null);
   const [draggedAssetId, setDraggedAssetId] = useState<string | number | null>(null);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const connectingFromRef = useRef<string | null>(null);
   const [isDraggingConnection, setIsDraggingConnection] = useState(false);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -254,12 +260,33 @@ export function WorkflowCanvas() {
     setDraggedComponentName(name);
     setDraggedServiceName(serviceName || null);
     setDraggedAssetId(assetId ?? null);
+    const payload = JSON.stringify({ type, name, serviceName, assetId });
+    e.dataTransfer.setData("application/x-cloud-bot-component", payload);
+    e.dataTransfer.setData("text/plain", payload);
     e.dataTransfer.effectAllowed = "copy";
   }, []);
 
   const handleCanvasDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (!draggedComponentType || !draggedComponentName || !canvasRef.current) return;
+    let payload: {
+      type?: string;
+      name?: string;
+      serviceName?: string;
+      assetId?: string | number;
+    } = {};
+    const serialized = e.dataTransfer.getData("application/x-cloud-bot-component") || e.dataTransfer.getData("text/plain");
+    if (serialized) {
+      try {
+        payload = JSON.parse(serialized);
+      } catch {
+        payload = {};
+      }
+    }
+    const componentType = payload.type || draggedComponentType;
+    const componentName = payload.name || draggedComponentName;
+    const componentServiceName = payload.serviceName || draggedServiceName;
+    const componentAssetId = payload.assetId ?? draggedAssetId;
+    if (!componentType || !componentName || !canvasRef.current) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left - 100; // offset to center the node
@@ -282,11 +309,11 @@ export function WorkflowCanvas() {
         attempts += 1;
       }
       const newNode: WorkflowNode = {
-        id: `${draggedComponentType}-${Date.now()}`,
-        type: draggedComponentType as WorkflowNode['type'],
-        name: draggedComponentName,
-        ...(draggedServiceName && { serviceName: draggedServiceName }),
-        ...(draggedAssetId !== null && { assetId: draggedAssetId }),
+        id: `${componentType}-${Date.now()}`,
+        type: componentType as WorkflowNode['type'],
+        name: componentName,
+        ...(componentServiceName && { serviceName: componentServiceName }),
+        ...(componentAssetId !== null && componentAssetId !== undefined && { assetId: componentAssetId }),
         x: nextX,
         y: nextY,
       };
@@ -313,6 +340,7 @@ export function WorkflowCanvas() {
   const startConnection = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    connectingFromRef.current = nodeId;
     setConnectingFrom(nodeId);
     setIsDraggingConnection(true);
     
@@ -329,6 +357,7 @@ export function WorkflowCanvas() {
     const handleMouseUp = () => {
       setIsDraggingConnection(false);
       setConnectingFrom(null);
+      connectingFromRef.current = null;
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -378,45 +407,51 @@ export function WorkflowCanvas() {
   }, [nodes, isDraggingConnection]);
 
   const completeConnection = useCallback((toNodeId: string) => {
-    if (!connectingFrom || connectingFrom === toNodeId) {
+    const fromId = connectingFromRef.current || connectingFrom;
+    if (!fromId || fromId === toNodeId) {
       setConnectingFrom(null);
+      connectingFromRef.current = null;
       return;
     }
 
-    const fromNode = nodes.find(n => n.id === connectingFrom);
+    const fromNode = nodes.find(n => n.id === fromId);
     const toNode = nodes.find(n => n.id === toNodeId);
 
     if (!fromNode || !toNode) {
       setConnectingFrom(null);
+      connectingFromRef.current = null;
       return;
     }
 
     if (!canConnect(fromNode.type, toNode.type)) {
       toast("节点连接规则错误", { description: "单向连接规则：任务 → 机器人 → 算法，算法 → 算法" });
       setConnectingFrom(null);
+      connectingFromRef.current = null;
       return;
     }
 
     // Check if connection already exists
     const existingConnection = connections.find(
-      conn => (conn.fromId === connectingFrom && conn.toId === toNodeId) ||
-              (conn.fromId === toNodeId && conn.toId === connectingFrom)
+      conn => (conn.fromId === fromId && conn.toId === toNodeId) ||
+              (conn.fromId === toNodeId && conn.toId === fromId)
     );
 
     if (existingConnection) {
       toast("节点间已存在连接");
       setConnectingFrom(null);
+      connectingFromRef.current = null;
       return;
     }
 
     const newConnection: Connection = {
-      id: `${connectingFrom}-${toNodeId}`,
-      fromId: connectingFrom,
+      id: `${fromId}-${toNodeId}`,
+      fromId,
       toId: toNodeId,
     };
 
     setConnections(prev => [...prev, newConnection]);
     setConnectingFrom(null);
+    connectingFromRef.current = null;
     setIsDraggingConnection(false);
     toast("节点连接成功");
   }, [connectingFrom, nodes, connections]);
@@ -425,6 +460,7 @@ export function WorkflowCanvas() {
     setNodes([]);
     setConnections([]);
     setConnectingFrom(null);
+    connectingFromRef.current = null;
     setIsDraggingConnection(false);
     toast("工作流已重置");
   }, []);
@@ -459,54 +495,64 @@ export function WorkflowCanvas() {
     toast.success("机器人已保存到列表");
   }, []);
 
-  const canExecuteWorkflow = useCallback(() => {
-    // 至少需要有一个任务、机器人或算法节点
-    if (nodes.length === 0) return false;
-
-    const existingTypes = new Set(nodes.map(node => node.type));
-    const hasRequiredNode = existingTypes.has("task") || existingTypes.has("robot") || existingTypes.has("algorithm");
-    
-    if (!hasRequiredNode) return false;
-
-    // 检查所有节点是否都被连接（没有孤立节点）
-    const connectedNodes = new Set<string>();
-    connections.forEach(conn => {
-      connectedNodes.add(conn.fromId);
-      connectedNodes.add(conn.toId);
-    });
-
-    return nodes.every(node => connectedNodes.has(node.id)) && connections.length > 0;
-  }, [nodes, connections]);
-
-  const getDisabledReason = useCallback(() => {
+  const getWorkflowValidationIssue = useCallback(() => {
     if (nodes.length === 0) {
-      return "请先添加节点到画布（至少需要一个任务、机器人或算法节点）";
+      return "请添加 1 个任务、1 个机器人和至少 1 个算法节点";
+    }
+    const taskNodes = nodes.filter((node) => node.type === "task");
+    const robotNodes = nodes.filter((node) => node.type === "robot");
+    const algorithmNodes = nodes.filter((node) => node.type === "algorithm");
+    if (taskNodes.length !== 1) return "生产闭环必须且只能选择 1 个 Pipeline 任务";
+    if (robotNodes.length !== 1) return "生产闭环必须且只能选择 1 个机器人";
+    if (algorithmNodes.length === 0) return "生产闭环至少需要 1 个算法节点";
+
+    const pipeline = tasks.find((item) => String(item.id) === String(taskNodes[0].assetId || ""));
+    if (!pipeline) return "任务节点没有绑定已注册 Pipeline，请重新从组件库拖入";
+    if (!pipeline.algorithm_ids?.length) return `Pipeline“${pipeline.name}”尚未绑定可执行算法版本`;
+    const invalidAlgorithm = algorithmNodes.find((node) =>
+      !pipeline.algorithm_ids?.some((id) => String(id) === String(node.assetId || "")),
+    );
+    if (invalidAlgorithm) return `算法“${invalidAlgorithm.name}”不属于 Pipeline“${pipeline.name}”`;
+
+    const robot = robots.find((item) => String(item.id) === String(robotNodes[0].assetId || ""));
+    if (!robot) return "机器人节点没有绑定已注册机器人，请重新从组件库拖入";
+    if (
+      pipeline.recommended_robot_ids?.length &&
+      !pipeline.recommended_robot_ids.some((id) => String(id) === String(robot.id))
+    ) {
+      const recommended = pipeline.recommended_robot_ids
+        .map((id) => robots.find((item) => String(item.id) === String(id))?.name)
+        .filter(Boolean)
+        .join("、");
+      return `Pipeline“${pipeline.name}”需要机器人：${recommended || pipeline.recommended_robot_ids.join("、")}`;
     }
 
-    const existingTypes = new Set(nodes.map(node => node.type));
-    const hasRequiredNode = existingTypes.has("task") || existingTypes.has("robot") || existingTypes.has("algorithm");
-    
-    if (!hasRequiredNode) {
-      return "至少需要一个任务、机器人或算法节点";
+    const reachable = new Set<string>([taskNodes[0].id]);
+    const queue = [taskNodes[0].id];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      connections.filter((connection) => connection.fromId === current).forEach((connection) => {
+        if (!reachable.has(connection.toId)) {
+          reachable.add(connection.toId);
+          queue.push(connection.toId);
+        }
+      });
     }
-
-    if (connections.length === 0) {
-      return "请连接节点以形成工作流";
+    if (nodes.some((node) => !reachable.has(node.id))) {
+      return "节点必须形成一条从任务到机器人再到全部算法的单向可达链";
     }
-
-    const connectedNodes = new Set<string>();
-    connections.forEach(conn => {
-      connectedNodes.add(conn.fromId);
-      connectedNodes.add(conn.toId);
-    });
-
-    const isolatedNodes = nodes.filter(node => !connectedNodes.has(node.id));
-    if (isolatedNodes.length > 0) {
-      return "存在未连接的节点，请确保所有节点都已连接";
-    }
-
     return "";
-  }, [nodes, connections]);
+  }, [connections, nodes, robots, tasks]);
+
+  const canExecuteWorkflow = useCallback(
+    () => getWorkflowValidationIssue() === "",
+    [getWorkflowValidationIssue],
+  );
+
+  const getDisabledReason = useCallback(
+    () => getWorkflowValidationIssue(),
+    [getWorkflowValidationIssue],
+  );
 
   // 根据连接关系对算法节点进行拓扑排序
   const getAlgorithmExecutionOrder = useCallback(() => {
@@ -570,6 +616,11 @@ export function WorkflowCanvas() {
   }, [nodes, connections]);
 
   const executeWorkflow = useCallback(async () => {
+    const validationIssue = getWorkflowValidationIssue();
+    if (validationIssue) {
+      toast("工作流配置不完整", { description: validationIssue });
+      return;
+    }
     let algorithmOrder: WorkflowNode[];
     try {
       algorithmOrder = getAlgorithmExecutionOrder();
@@ -732,7 +783,7 @@ export function WorkflowCanvas() {
     } finally {
       setIsExecuting(false);
     }
-  }, [navigate, getAlgorithmExecutionOrder, nodes, connections, robots]);
+  }, [navigate, getAlgorithmExecutionOrder, getWorkflowValidationIssue, nodes, connections, robots]);
 
   const groupedComponents = componentTypes.reduce((acc, component) => {
     if (!acc[component.category]) {
@@ -788,11 +839,18 @@ export function WorkflowCanvas() {
                 <div
                   key={`robot-${index}`}
                   draggable
-                  onDragStart={(e) => handleComponentDragStart(e, 'robot', robot.name)}
+                  onDragStart={(e) => handleComponentDragStart(e, 'robot', robot.name, robot.name, robot.id)}
                   className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-accent cursor-grab active:cursor-grabbing transition-colors"
                 >
                   <Bot className="h-4 w-4 text-primary" />
-                  <span className="text-sm">{robot.name}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm">{robot.name}</span>
+                    {(robot.model || robot.actuator) && (
+                      <span className="block truncate text-[10px] text-muted-foreground">
+                        {[robot.model, robot.actuator].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))}
             </CollapsibleContent>
@@ -866,7 +924,7 @@ export function WorkflowCanvas() {
                       <p><strong>移动节点：</strong>直接拖拽节点到想要的位置</p>
                       <p><strong>删除节点：</strong>点击节点右上角的删除按钮</p>
                       <p><strong>连接规则：</strong>任务 → 机器人 → 算法（单向连接，不可反向）</p>
-                      <p><strong>运行工作流：</strong>至少有一个任务、机器人或算法节点，且所有节点都已连接后，即可执行工作流</p>
+                      <p><strong>运行工作流：</strong>选择 1 个 Pipeline、1 个匹配机器人和至少 1 个该 Pipeline 已绑定的算法，并按顺序完整连接</p>
                     </div>
                   </div>
                 </PopoverContent>
@@ -1117,16 +1175,17 @@ export function WorkflowCanvas() {
                   <Card className="w-48 shadow-card hover:shadow-elevation transition-all cursor-pointer relative">
                     <button
                       onClick={() => deleteNode(node.id)}
+                      aria-label={`删除${node.name}`}
                       className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/80 transition-colors z-20"
                     >
                       <X className="h-3 w-3" />
                     </button>
                     
                     <div
-                      className="absolute top-1/2 -right-3 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1/2 -right-3 transform -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity"
                       onMouseDown={(e) => startConnection(e, node.id)}
                     >
-                      <button className="h-6 w-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/80 cursor-crosshair">
+                      <button aria-label={`从${node.name}开始连接`} className="h-6 w-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/80 cursor-crosshair">
                         <Plus className="h-3 w-3" />
                       </button>
                     </div>
@@ -1134,7 +1193,9 @@ export function WorkflowCanvas() {
                     <CardContent 
                       className={`p-4 ${draggedNode === node.id ? 'cursor-grabbing' : 'cursor-move'} select-none`}
                       onMouseDown={(e) => startNodeDrag(e, node.id)}
-                      onMouseUp={() => isDraggingConnection && completeConnection(node.id)}
+                      onMouseUp={() => {
+                        if (connectingFromRef.current) completeConnection(node.id);
+                      }}
                       onClick={(e) => {
                         // 如果不是拖动操作，则处理点击
                         if (!isDraggingConnection && !draggedNode) {
